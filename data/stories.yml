@@ -1,0 +1,46 @@
+version: "3.1"
+
+# NOTE ON SCOPE: every flow-starting intent (ask_trip_planning, ask_weather,
+# ask_currency_exchange, ask_human_advisor, see_cities_list, see_hotel_list)
+# routes through action_route_entry_point, which decides at runtime — via a
+# plain Python if/else, not a rule — whether to activate the requested
+# flow or show the awaiting_finish reminder (see that action's docstring
+# in actions.py). A story that showed what happens AFTER that action,
+# e.g. "ask_trip_planning -> action_route_entry_point -> trip_planning_form
+# -> active_loop: trip_planning_form", would assert a SPECIFIC one of
+# those two dynamic outcomes as fact — which directly contradicts the
+# rule ("Route trip planning entry point"), whose last declared step IS
+# action_route_entry_point (RulePolicy reads a rule with no further
+# steps as "control returns to the user here"). This is a confirmed,
+# training-blocking "InvalidRule: Contradicting rules or stories found"
+# error, not a style preference — every story below is deliberately kept
+# on the safe side of that line. RulePolicy alone (see rules.yml) still
+# handles every one of these flows completely and deterministically at
+# runtime; these stories exist only to give TEDPolicy a little extra
+# generalisation data for the parts that AREN'T already fully declared
+# by an exact rule.
+
+stories:
+
+- story: user asks for a human straight away
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: request_human_handover
+    - action: action_handover_to_human
+
+- story: user goes off-topic a couple of times
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - intent: out_of_scope
+    - action: action_smart_fallback
+
+- story: carbon footprint question with no active trip yet
+  steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: ask_carbon_footprint
+    - action: action_get_carbon_footprint

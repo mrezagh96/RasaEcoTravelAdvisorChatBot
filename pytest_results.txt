@@ -1,0 +1,82 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.2, pytest-8.3.3, pluggy-1.6.0 -- C:\Rasa\rasa-env\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Rasa\eco-travel-advisor
+plugins: anyio-4.14.0
+collecting ... collected 206 items
+
+tests/test_city_matching.py::TestCityExtractorRegex::test_multi_word_city_not_truncated PASSED [  0%]
+tests/test_city_matching.py::TestCityExtractorRegex::test_trailing_words_excluded PASSED [  0%]
+tests/test_city_matching.py::TestCityExtractorRegex::test_reversed_order_sentence PASSED [  1%]
+tests/test_city_matching.py::TestCityExtractorRegex::test_bare_word_fallback PASSED [  1%]
+tests/test_city_matching.py::TestCityExtractorRegex::test_combined_message_both_cities PASSED [  2%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_combined_lowercase_from_to_sentence PASSED [  2%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_offtopic_sentence_with_nested_trigger_words_yields_nothing PASSED [  3%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_bare_article_after_trigger_is_never_a_city_candidate PASSED [  3%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_the_hague_is_not_broken_by_the_article_guard PASSED [  4%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_generic_trigger_picks_the_earliest_real_city_not_priority_order PASSED [  4%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_date_ish_second_word_never_gets_captured PASSED [  5%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_possessive_phrasing_does_not_swallow_a_leading_glue_word PASSED [  5%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_multi_word_city_names_still_work_through_all_these_guards PASSED [  6%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_bare_city_weather_compound_noun_with_no_trigger_word_at_all PASSED [  6%]
+tests/test_city_matching.py::TestLenientTriggerExtraction::test_bare_city_weather_pattern_does_not_swallow_a_leading_glue_word PASSED [  7%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_exact_match PASSED [  7%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_typo_is_fuzzy_not_exact PASSED [  8%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_accent_variation_counts_as_exact PASSED [  8%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_missing_space_typo PASSED [  9%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_nonsense_not_found PASSED [  9%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_single_letter_query_is_rejected_before_live_geocode PASSED [ 10%]
+tests/test_city_matching.py::TestFuzzyGeocodeMatch::test_two_letter_query_is_not_rejected_by_the_length_guard PASSED [ 10%]
+tests/test_city_matching.py::TestFormIntegration::test_typo_triggers_confirmation_with_yes_button PASSED [ 11%]
+tests/test_city_matching.py::TestFormIntegration::test_exact_match_accepted_with_no_message PASSED [ 11%]
+tests/test_city_matching.py::TestFormIntegration::test_payload_confirmation_click_is_not_re_parsed_by_regex PASSED [ 12%]
+tests/test_city_matching.py::TestFormIntegration::test_already_filled_slot_is_never_overwritten PASSED [ 12%]
+tests/test_city_matching.py::TestFormIntegration::test_combined_message_fills_both_city_slots_in_one_turn PASSED [ 13%]
+tests/test_city_matching.py::TestFormIntegration::test_origin_same_as_destination_is_rejected PASSED [ 13%]
+tests/test_city_matching.py::TestFormIntegration::test_yes_click_resolves_directly_from_pending_suggestion PASSED [ 14%]
+tests/test_city_matching.py::TestFormIntegration::test_yes_click_resolution_is_correct_across_two_independent_calls PASSED [ 14%]
+tests/test_city_matching.py::TestFormIntegration::test_yes_click_with_nothing_pending_falls_through_to_normal_not_found PASSED [ 15%]
+tests/test_city_matching.py::TestFormIntegration::test_yes_click_only_resolves_for_the_slot_it_was_pending_for PASSED [ 15%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_weather_city_yes_click_resolves_through_full_pipeline PASSED [ 16%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_weather_city_typed_yes_resolves_through_full_pipeline PASSED [ 16%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_origin_city_yes_click_resolves_through_full_pipeline PASSED [ 16%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_destination_city_yes_click_resolves_through_full_pipeline PASSED [ 17%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_hotel_list_city_yes_click_resolves_through_full_pipeline PASSED [ 17%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_stray_slash_payload_with_nothing_pending_still_extracts_nothing PASSED [ 18%]
+tests/test_city_matching.py::TestYesClickFullExtractionPipeline::test_pending_confirmation_for_a_different_slot_is_not_hijacked PASSED [ 18%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_weather_day_text_button_click_resolves_through_full_pipeline PASSED [ 19%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_weather_day_text_next_week_button_click_resolves_through_full_pipeline PASSED [ 19%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_destination_city_grid_button_click_resolves_through_full_pipeline PASSED [ 20%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_origin_city_grid_button_click_resolves_through_full_pipeline PASSED [ 20%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_travel_date_from_button_click_resolves_through_full_pipeline PASSED [ 21%]
+tests/test_city_matching.py::TestStructuredButtonPayloadFullExtractionPipeline::test_stray_slash_payload_without_matching_entity_still_extracts_nothing PASSED [ 21%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsTripPlanningForm::test_origin_city_not_swallowed_when_still_unset PASSED [ 22%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsTripPlanningForm::test_origin_city_still_extracted_normally_for_other_intents PASSED [ 22%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsTripPlanningForm::test_travel_date_from_not_swallowed PASSED [ 23%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsTripPlanningForm::test_travel_date_to_not_swallowed PASSED [ 23%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsBookConfirmationForm::test_book_confirmation_not_swallowed PASSED [ 24%]
+tests/test_content_drift_guards.py::TestChangeDestinationCityGuardsBookConfirmationForm::test_book_confirmation_still_extracted_normally_for_other_intents PASSED [ 24%]
+tests/test_content_drift_guards.py::TestAskTripToThisCityGuardsWeatherCheckForm::test_weather_day_text_not_swallowed PASSED [ 25%]
+tests/test_content_drift_guards.py::TestAskTripToThisCityGuardsWeatherCheckForm::test_weather_day_text_still_extracted_normally_for_other_intents PASSED [ 25%]
+tests/test_data_services.py::test_health PASSED                          [ 26%]
+tests/test_data_services.py::TestGeocode::test_curated_city_resolves_instantly PASSED [ 26%]
+tests/test_data_services.py::TestGeocode::test_curated_lookup_is_case_insensitive PASSED [ 27%]
+tests/test_data_services.py::TestGeocode::test_unknown_place_with_no_network_returns_404 PASSED [ 27%]
+tests/test_data_services.py::TestHotels::test_hotels_response_is_well_formed_live_or_fallback PASSED [ 28%]
+tests/test_data_services.py::TestTransport::test_rating_for_major_city_live_or_curated PASSED [ 28%]
+tests/test_data_services.py::TestTransport::test_unknown_city_is_honest_about_not_knowing 
+
+============================== warnings summary ===============================
+..\rasa-env\lib\site-packages\starlette\formparsers.py:10
+  C:\Rasa\rasa-env\lib\site-packages\starlette\formparsers.py:10: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+..\rasa-env\lib\site-packages\httpx\_client.py:690
+  C:\Rasa\rasa-env\lib\site-packages\httpx\_client.py:690: DeprecationWarning: The 'app' shortcut is now deprecated. Use the explicit style 'transport=WSGITransport(app=...)' instead.
+    warnings.warn(message, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+C:\Users\Lenovo\AppData\Local\Programs\Python\Python310\lib\threading.py:320: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+======================= 59 passed, 2 warnings in 43.29s =======================

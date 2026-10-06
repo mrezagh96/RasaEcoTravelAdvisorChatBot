@@ -1,0 +1,671 @@
+version: "3.1"
+
+rules:
+
+# ---- small talk (never gated by awaiting_finish — harmless pleasantries) --
+- rule: Greet the user
+  steps:
+    - intent: greet
+    - action: utter_greet
+
+- rule: Say goodbye
+  steps:
+    - intent: goodbye
+    - action: utter_goodbye
+
+- rule: Respond to bot challenge
+  steps:
+    - intent: bot_challenge
+    - action: utter_bot_challenge
+
+- rule: Respond to thanks
+  steps:
+    - intent: thank_you
+    - action: utter_thank_you
+
+# ---- entry-point routing ------------------------------------------------------
+# Every flow-starting intent funnels through ONE custom action first
+# (action_route_entry_point), which decides at runtime whether to show
+# the awaiting_finish reminder or hand off to the right form/action via
+# FollowupAction — see that action's own docstring in actions.py for
+# why this is a single dynamic action rather than a pair of static
+# rules (the static-rule version was tried and fails "rasa train" with
+# an InvalidRule error, since RulePolicy can't statically reconcile two
+# rules predicting different FIRST actions for the same intent purely
+# from a slot_was_set condition — confirmed against multiple long-
+# standing RasaHQ/rasa GitHub issues about that exact mechanism).
+#
+# Each rule below therefore ends at action_route_entry_point with no
+# further steps — that's the complete, correct description of what
+# RulePolicy can verify statically; the actual routing decision happens
+# inside the action at runtime. See stories.yml's own note on why
+# stories don't try to show what happens after this action either.
+- rule: Route trip planning entry point
+  steps:
+    - intent: ask_trip_planning
+    - action: action_route_entry_point
+
+- rule: Route weather check entry point
+  steps:
+    - intent: ask_weather
+    - action: action_route_entry_point
+
+- rule: Route currency exchange entry point
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_route_entry_point
+
+- rule: Route human advisor entry point
+  steps:
+    - intent: ask_human_advisor
+    - action: action_route_entry_point
+
+- rule: Route cities list entry point
+  steps:
+    - intent: see_cities_list
+    - action: action_route_entry_point
+
+- rule: Route hotel list entry point
+  steps:
+    - intent: see_hotel_list
+    - action: action_route_entry_point
+
+# ---- trip planning form -------------------------------------------------------
+- rule: Submit trip planning form
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - action: trip_planning_form
+    - active_loop: null
+    - action: action_generate_trip_recommendations
+
+# ---- content drifting, part 1: change_destination_city ----------------------
+# See actions.py's ActionHandleDestinationChange for the full mechanism.
+# Both rules point at the SAME action (it branches internally on whether
+# trip_results has been generated yet) — mirrors the "off-topic during X"
+# rules' proven condition+intent pattern (a MORE specific match than the
+# plain "Submit ... form" rule below, so it wins whenever this exact
+# intent fires, without contradicting that rule for every OTHER intent).
+#
+# FIX (real-execution root-cause, this round — see the long comment above
+# ActionHandleDestinationChange's removed re-ask helpers in actions.py):
+# the trip-planning rule now ends in `action: trip_planning_form` /
+# `active_loop: trip_planning_form`, exactly like every "Handle off-topic/
+# low-confidence messages during <form>" rule pair further below — this is
+# what actually clears the form's rejection flag, confirmed via a real
+# trained-model run to be the ONLY thing that does. Without it, a
+# genuinely valid answer to the very next re-asked question (e.g. "4" for
+# "How many people are travelling?") was wrongly swallowed by the smart-
+# fallback system, exactly as the user's own transcript + debug log showed.
+- rule: Handle destination change during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: change_destination_city
+    - action: action_handle_destination_change
+    - action: trip_planning_form
+    - active_loop: trip_planning_form
+
+# NOTE: the book-confirmation counterpart below deliberately does NOT get
+# the same `action: book_confirmation_form` / `active_loop:
+# book_confirmation_form` tail. Confirmed via a real trained-model run
+# (destination changed mid book_confirmation_form, then "yes" answered
+# normally on the next turn — booking correctly confirmed) that this
+# branch never had the bug: action_handle_destination_change's own
+# trip_results-is-set branch already ends with
+# ActionGenerateTripRecommendations's `FollowupAction("book_confirmation_
+# form")`, which re-executes book_confirmation_form as an action in this
+# same turn regardless of any rule tail — and that alone is what resets
+# the rejection flag (rasa's DialogueStateTracker.set_latest_action resets
+# it whenever the just-executed action's name matches the active loop's
+# name, independent of whether a FollowupAction or a rule step triggered
+# it). Adding a redundant tail here would just invoke the form an extra,
+# unnecessary time for no behavioural difference.
+- rule: Handle destination change during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: change_destination_city
+    - action: action_handle_destination_change
+
+# ---- post-recommendation actions --------------------------------------------
+# "Would you like to book this?" — book_confirmation_form (see domain.yml's
+# book_confirmation slot comment for the full real-user-report root cause).
+# NOTE: there are deliberately NO plain "intent: confirm_booking ->
+# action_confirm_booking" / "intent: deny_booking -> action_deny_booking"
+# rules any more — those used to be the ONLY way this question was
+# answered, which is exactly what broke: they only fired for a message
+# DIET happened to classify as one of those two trained intents, with no
+# active_loop/requested_slot for the fallback system to recognise a
+# question was even pending. The form below replaces them entirely: its
+# own submit rule hands off to action_route_book_confirmation, which
+# reads the yes/no decision validate_book_confirmation already worked
+# out (via the confirm_booking/deny_booking intents themselves, e.g. a
+# button click, OR a broad set of typed yes/no phrasings — see
+# _looks_like_booking_yes/_looks_like_booking_no in actions.py) and
+# calls the SAME action_confirm_booking/action_deny_booking as before.
+- rule: Submit book confirmation form
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - action: book_confirmation_form
+    - active_loop: null
+    - action: action_route_book_confirmation
+
+- rule: See more options
+  steps:
+    - intent: see_more_options
+    - action: action_see_more_options
+
+- rule: Carbon offset info (standalone question or the post-booking button)
+  steps:
+    - intent: ask_carbon_offset_info
+    - action: action_offset_and_finish
+
+# ---- weather checking form ----------------------------------------------------
+- rule: Submit weather check form
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - action: weather_check_form
+    - active_loop: null
+    - action: action_answer_weather_check
+
+# ---- content drifting, part 2: ask_trip_to_this_city -------------------------
+# See actions.py's ActionStartTripFromWeatherDrift for the full mechanism.
+# Two rules, covering both timings the user asked for:
+#   - mid weather_check_form (weather_city already answered, Q2/
+#     weather_day_text still pending) — condition-scoped, same proven
+#     "more specific than the plain Submit-form rule" pattern as the
+#     off-topic rules above.
+#   - any time AFTER it finished, including after the Finish button
+#     already printed — deliberately UNCONDITIONED (same pattern as
+#     "See more options" / "Human handover requested directly" below,
+#     which already reach a standalone action regardless of active_loop
+#     or awaiting_finish) — this is the one explicit exception to the
+#     Finish-gate the user asked for. This same rule also covers "make a
+#     trip to there" typed after a hotel list (hotel_list_form has only
+#     one question, so there is no mid-form variant for it): the action
+#     reads the city from last_checked_city, which both flows write.
+- rule: Drift from weather checking to trip planning, mid-form
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: ask_trip_to_this_city
+    - action: action_start_trip_from_weather_drift
+
+- rule: Drift from weather checking to trip planning, after Finish
+  steps:
+    - intent: ask_trip_to_this_city
+    - action: action_start_trip_from_weather_drift
+
+# ---- currency exchange form ----------------------------------------------------
+- rule: Submit currency exchange form
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - action: currency_exchange_form
+    - active_loop: null
+    - action: action_answer_currency_exchange
+
+# ---- human advisor form -----------------------------------------------------
+- rule: Submit human advisor form
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - action: human_advisor_form
+    - active_loop: null
+    - action: action_submit_human_advisor
+
+# ---- hotel list sub-button form ----------------------------------------------
+- rule: Submit hotel list form
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - action: hotel_list_form
+    - active_loop: null
+    - action: action_answer_hotel_list
+
+# ---- Finish button -----------------------------------------------------------
+- rule: Handle the Finish button
+  steps:
+    - intent: finish
+    - action: action_finish
+
+# ---- carbon footprint & human handover (unrelated to forms) -----------------
+- rule: Answer carbon footprint question
+  steps:
+    - intent: ask_carbon_footprint
+    - action: action_get_carbon_footprint
+
+- rule: Human handover requested directly
+  steps:
+    - intent: request_human_handover
+    - action: action_handover_to_human
+
+# ---- smart fallback (see actions/fallback.py) --------------------------------
+# Both routes below share ONE action. Whether the user typed something DIET
+# genuinely could not classify (nlu_fallback, raised by FallbackClassifier in
+# config.yml) or something clearly outside the bot's job (out_of_scope, a
+# trained intent), the recovery experience should be identical from the
+# user's point of view. action_smart_fallback tracks a per-streak nudge
+# counter (1st/2nd/3rd attempt) and a whole-conversation give-up counter
+# (capped at 5, per the brief for this project) and decides what to say.
+#
+# NOTE: action_smart_fallback's own code can, on the whole-conversation
+# give-up limit, return a FollowupAction to action_handover_to_human. No
+# story in this project shows that specific continuation explicitly (for
+# exactly the same static-analysis reason explained above), so it never
+# creates a training conflict — it simply isn't asserted anywhere as "the"
+# outcome of this rule.
+- rule: Handle low-confidence or ambiguous messages
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+
+- rule: Handle clearly off-topic messages
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+
+# "Unhappy path" versions: without these, a confidently-classified
+# off-topic message sent WHILE a form is active would just get silently
+# absorbed by the form (it would try, and fail, to fill the current
+# requested_slot and re-ask the same question with no acknowledgement).
+# One per form that can be active, since a rule condition can't OR-match
+# multiple active_loop values.
+#
+# Each form gets TWO copies of this rule — one for `out_of_scope`
+# (a confidently-classified off-topic trained intent) and one for
+# `nlu_fallback` (raised by FallbackClassifier when NLU itself can't
+# confidently classify anything at all) — both need to interrupt the
+# form the same way. Previously only the out_of_scope half existed;
+# added the nlu_fallback half for the same reason, and uniformly across
+# every form, per the fallback-system fix (see domain.yml's
+# `not_intent: [out_of_scope, nlu_fallback]` additions on every slot
+# mapping in this project — WITHOUT that fix, these rules can never
+# actually win against the form's own from_text catch-all mapping,
+# confirmed via a real trained-model run: a message classified
+# out_of_scope at 99.6% confidence, sent while destination_city was
+# being asked, was still fully absorbed by the form's own "I couldn't
+# find a place called '...'" rejection, and this rule never fired at
+# all. The not_intent fix + these rules together are what make
+# action_smart_fallback correctly see requested_slot still set — see
+# actions/fallback.py's ActionSmartFallback for how it uses that).
+- rule: Handle off-topic messages during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: trip_planning_form
+    - active_loop: trip_planning_form
+
+- rule: Handle low-confidence messages during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: trip_planning_form
+    - active_loop: trip_planning_form
+
+- rule: Handle off-topic messages during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: weather_check_form
+    - active_loop: weather_check_form
+
+- rule: Handle low-confidence messages during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: weather_check_form
+    - active_loop: weather_check_form
+
+- rule: Handle off-topic messages during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: currency_exchange_form
+    - active_loop: currency_exchange_form
+
+- rule: Handle low-confidence messages during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: currency_exchange_form
+    - active_loop: currency_exchange_form
+
+- rule: Handle off-topic messages during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: human_advisor_form
+    - active_loop: human_advisor_form
+
+- rule: Handle low-confidence messages during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: human_advisor_form
+    - active_loop: human_advisor_form
+
+- rule: Handle off-topic messages during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: hotel_list_form
+    - active_loop: hotel_list_form
+
+- rule: Handle low-confidence messages during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: hotel_list_form
+    - active_loop: hotel_list_form
+
+- rule: Handle off-topic messages during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: out_of_scope
+    - action: action_smart_fallback
+    - action: book_confirmation_form
+    - active_loop: book_confirmation_form
+
+- rule: Handle low-confidence messages during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: nlu_fallback
+    - action: action_smart_fallback
+    - action: book_confirmation_form
+    - active_loop: book_confirmation_form
+
+# ---- general task-switch (see actions.py's ActionHandleTaskSwitch) ----------
+# User's own spec (chosen via AskUserQuestion, the BROADEST option:
+# "گسترده‌تر: تعویض کامل کار وسط هر فرمی" — a general feature letting the
+# user drop ANY currently-active form and jump to ANY of the 6 top-level
+# tasks at any point). One rule per (active form, foreign entry intent)
+# pair — 5 forms × 5 foreign intents each, plus book_confirmation_form
+# (which has no "own" entry intent of its own, since it's only ever
+# reached via a FollowupAction, never directly by the user) × all 6 = 31
+# rules total.
+#
+# Same condition-scoped-rule-is-more-specific-than-unconditioned-rule
+# pattern already proven by the "Route ... entry point" rules above
+# coexisting with these (RulePolicy picks whichever rule's `condition:`
+# actually matches the current active_loop — confirmed via real training,
+# same mechanism this file already relies on for the off-topic/low-
+# confidence rule pairs below).
+#
+# No `action: <form>` / `active_loop: <form>` tail needed on any of these
+# (unlike "Handle destination change during trip planning" above) — see
+# ActionHandleTaskSwitch's own docstring in actions.py for why: it always
+# activates a genuinely DIFFERENT loop than the one it just exited, which
+# rasa's own change_loop_to() constructs fresh with rejected=False, so
+# there's no stuck-rejection flag to clear here the way there is for
+# re-entering the SAME loop.
+- rule: Task switch to weather check during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: ask_weather
+    - action: action_handle_task_switch
+
+- rule: Task switch to currency exchange during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_handle_task_switch
+
+- rule: Task switch to human advisor during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: ask_human_advisor
+    - action: action_handle_task_switch
+
+- rule: Task switch to hotel list during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: see_hotel_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during trip planning
+  condition:
+    - active_loop: trip_planning_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to trip planning during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: ask_trip_planning
+    - action: action_handle_task_switch
+
+- rule: Task switch to currency exchange during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_handle_task_switch
+
+- rule: Task switch to human advisor during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: ask_human_advisor
+    - action: action_handle_task_switch
+
+- rule: Task switch to hotel list during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: see_hotel_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during weather check
+  condition:
+    - active_loop: weather_check_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to trip planning during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: ask_trip_planning
+    - action: action_handle_task_switch
+
+- rule: Task switch to weather check during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: ask_weather
+    - action: action_handle_task_switch
+
+- rule: Task switch to human advisor during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: ask_human_advisor
+    - action: action_handle_task_switch
+
+- rule: Task switch to hotel list during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: see_hotel_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during currency exchange
+  condition:
+    - active_loop: currency_exchange_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to trip planning during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: ask_trip_planning
+    - action: action_handle_task_switch
+
+- rule: Task switch to weather check during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: ask_weather
+    - action: action_handle_task_switch
+
+- rule: Task switch to currency exchange during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_handle_task_switch
+
+- rule: Task switch to hotel list during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: see_hotel_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during human advisor request
+  condition:
+    - active_loop: human_advisor_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to trip planning during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: ask_trip_planning
+    - action: action_handle_task_switch
+
+- rule: Task switch to weather check during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: ask_weather
+    - action: action_handle_task_switch
+
+- rule: Task switch to currency exchange during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_handle_task_switch
+
+- rule: Task switch to human advisor during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: ask_human_advisor
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during hotel list request
+  condition:
+    - active_loop: hotel_list_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+# book_confirmation_form has no "own" entry intent (it's only ever
+# reached via ActionGenerateTripRecommendations's own FollowupAction —
+# see domain.yml's book_confirmation slot comment), so all 6 entry
+# intents are genuinely foreign to it, unlike every other form above.
+- rule: Task switch to trip planning during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: ask_trip_planning
+    - action: action_handle_task_switch
+
+- rule: Task switch to weather check during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: ask_weather
+    - action: action_handle_task_switch
+
+- rule: Task switch to currency exchange during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: ask_currency_exchange
+    - action: action_handle_task_switch
+
+- rule: Task switch to human advisor during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: ask_human_advisor
+    - action: action_handle_task_switch
+
+- rule: Task switch to hotel list during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: see_hotel_list
+    - action: action_handle_task_switch
+
+- rule: Task switch to cities list during book confirmation
+  condition:
+    - active_loop: book_confirmation_form
+  steps:
+    - intent: see_cities_list
+    - action: action_handle_task_switch
+
+# ---- "Clear conversation" button (see actions/fallback.py) ------------------
+# Shown after 3 consecutive off-topic messages. No `condition:` on this
+# one deliberately — it should work the same whether or not a form is
+# active (Restarted() wipes the tracker either way).
+- rule: Handle the Clear conversation button
+  steps:
+    - intent: clear_conversation
+    - action: action_clear_conversation
+
+# NOTE: there is deliberately NO rule here for the typo-correction "Yes"
+# button (/affirm_city_suggestion). An earlier version tried routing it
+# through a dedicated rule + action, and it turned out unreliable: the
+# affected slot's own from_text mapping (scoped to active_loop +
+# requested_slot, not to any specific intent) grabs the raw payload text
+# automatically as part of Core's normal per-turn slot filling, before
+# any rule's prediction is acted on — so validate_<slot> would see the
+# literal string "/affirm_city_suggestion" as the candidate regardless
+# of what a rule said should happen next. Confirmed via a real,
+# reproduced bug, not theory. The fix lives entirely inside
+# actions.py's _match_city_or_ask, which recognises that literal string
+# directly and resolves it from the pending_city_suggestion slot — the
+# ordinary "form still active, fill+validate this slot" path (already
+# covered by each form's own "Submit ... form" rule above) is all that's
+# needed; no separate rule for this intent is required or used.

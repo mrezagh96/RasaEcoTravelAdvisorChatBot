@@ -1,0 +1,5 @@
+# Test-only dependencies — deliberately kept OUT of requirements.txt so the
+# Docker image built for deployment (Render/HF Spaces) doesn't carry test
+# tooling it will never use. Install with: pip install -r requirements-dev.txt
+pytest==8.3.3
+httpx==0.27.2

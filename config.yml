@@ -1,0 +1,52 @@
+# =============================================================================
+#  config.yml — Eco-Travel Advisor
+# =============================================================================
+# Pipeline follows the course-standard DIETClassifier setup covered in
+# "Inside config.yml" (Worksheet 9): WhitespaceTokenizer splits the message,
+# two CountVectorsFeaturizers (word-level + char n-gram) turn tokens into
+# numbers, and a single DIETClassifier does both intent classification and
+# entity extraction. This is the pipeline the assignment brief names as the
+# recommended starting point for CPU-hosted environments.
+#
+# FallbackClassifier below is what actually fires our smart-fallback system:
+# any message where DIET's top intent is under `threshold`, OR where the top
+# two intents are too close together (`ambiguity_threshold`), gets relabelled
+# as the special intent `nlu_fallback`. data/rules.yml routes that straight to
+# action_smart_fallback (see actions/fallback.py for the 3-nudge / 5-giveup
+# logic requested for this project).
+# =============================================================================
+
+recipe: default.v1
+assistant_id: eco_travel_advisor
+language: en
+
+pipeline:
+  - name: WhitespaceTokenizer
+  - name: RegexFeaturizer
+  - name: LexicalSyntacticFeaturizer
+  - name: CountVectorsFeaturizer
+  - name: CountVectorsFeaturizer
+    analyzer: char_wb
+    min_ngram: 1
+    max_ngram: 4
+  - name: DIETClassifier
+    epochs: 120
+    constrain_similarities: true
+    entity_recognition: true
+  - name: EntitySynonymMapper
+  - name: ResponseSelector
+    epochs: 100
+  - name: FallbackClassifier
+    threshold: 0.65
+    ambiguity_threshold: 0.1
+
+policies:
+  - name: MemoizationPolicy
+  - name: RulePolicy
+    core_fallback_threshold: 0.4
+    core_fallback_action_name: "action_smart_fallback"
+    enable_fallback_prediction: true
+  - name: TEDPolicy
+    max_history: 8
+    epochs: 100
+    constrain_similarities: true

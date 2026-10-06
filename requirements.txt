@@ -1,0 +1,37 @@
+# =============================================================================
+# Eco-Travel Advisor — pinned dependencies
+# =============================================================================
+# Every version below was cross-checked directly against PyPI's metadata
+# (not guessed) to make sure this single shared environment actually
+# resolves — this is the one part of a Rasa + FastAPI project that silently
+# breaks most often, so it's worth being explicit about *why* each pin is
+# what it is:
+#
+#   * rasa==3.6.21 is the exact version this project's worksheets were
+#     written against. It requires Python >=3.8,<3.11 (hence the
+#     python:3.10-slim base image in the Dockerfile — 3.11/3.12 will NOT
+#     install rasa 3.x at all) and pydantic<1.10.10.
+#   * fastapi + uvicorn are pinned to the last pydantic-1-generation
+#     releases so data_services can live in the SAME environment as Rasa
+#     without a pydantic v1/v2 clash. Its own Pydantic usage (plain
+#     BaseModels) doesn't need anything from v2.
+#   * pydantic==1.10.9 is the newest 1.10.x release that still satisfies
+#     rasa's "<1.10.10" ceiling, and has proper cp310 wheels.
+#   * python-dateutil==2.8.2 — rasa==3.6.21 itself pins
+#     "python-dateutil<2.9,>=2.8" as one of its own dependencies, so this
+#     has to stay inside that range too (2.9.0 conflicts and breaks the
+#     install outright); 2.8.2 is the newest release that satisfies it,
+#     has no meaningful dependency footprint of its own (only `six`), and
+#     is used for absolute-date parsing in actions/date_resolver.py.
+#
+# If you change any of these, re-check both constraints again — this
+# combination was the whole point of pinning it this precisely.
+
+rasa==3.6.21
+rasa-sdk==3.6.2
+pydantic==1.10.9
+fastapi==0.95.2
+uvicorn[standard]==0.22.0
+streamlit==1.38.0
+requests==2.32.3
+python-dateutil==2.8.2

@@ -1,0 +1,26 @@
+{
+  "base": "EUR",
+  "rates": {
+    "USD": 1.08,
+    "GBP": 0.86,
+    "CHF": 0.94,
+    "JPY": 163.0,
+    "CNY": 7.75,
+    "CAD": 1.47,
+    "AUD": 1.62,
+    "SEK": 11.3,
+    "NOK": 11.6,
+    "DKK": 7.46,
+    "PLN": 4.3,
+    "CZK": 25.2,
+    "HUF": 395.0,
+    "AED": 3.97,
+    "SGD": 1.45,
+    "INR": 90.5,
+    "KRW": 1450.0,
+    "MXN": 18.4,
+    "BRL": 5.55,
+    "ZAR": 20.1
+  },
+  "note": "Approximate cached rates, EMERGENCY FALLBACK ONLY \u2014 never treat as live."
+}

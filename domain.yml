@@ -1,0 +1,741 @@
+version: "3.1"
+
+# =============================================================================
+#  domain.yml — MGH Travel Chatbot
+#  Advanced Conversational UI Design & Chatbot Development — BSBI / UCA
+#
+#  Four independent conversational processes, each its own Rasa form:
+#    1. trip_planning_form      — Trip Assistant & Booking (Q1-Q8)
+#    2. weather_check_form      — Weather Checking (2 questions)
+#    3. currency_exchange_form  — Currency Exchange (2 questions, but the
+#                                  first is really one combined "pair" pick)
+#    4. human_advisor_form      — Human Advisor (1 question: contact info)
+#  One small helper form backs a Trip Assistant sub-button:
+#    5. hotel_list_form         — asks for a city, then lists its hotels
+#  "cities list" needs no form — it's a static, one-shot response.
+# =============================================================================
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - thank_you
+  - bot_challenge
+  - ask_trip_planning              # "I want to go from Berlin to Lisbon"
+  - inform_num_travelers
+  - inform_budget_amount
+  - inform_sustainability_level
+  - inform_priority_focus
+  - inform_dates
+  - ask_weather                    # activates weather_check_form
+  - ask_currency_exchange          # activates currency_exchange_form
+  - ask_carbon_footprint
+  - ask_carbon_offset_info
+  - confirm_booking
+  - deny_booking
+  - see_more_options
+  - request_human_handover         # mid-conversation escalation (fallback-triggered)
+  - ask_human_advisor              # proactive "Human Advisor" home-screen flow
+  - see_cities_list                # Trip Assistant sub-button
+  - see_hotel_list                 # Trip Assistant sub-button
+  - finish                         # the "Finish / main menu" button, any flow
+  - out_of_scope                   # explicit off-topic chit-chat / trivia
+  - nlu_fallback                   # reserved: raised by FallbackClassifier
+  - affirm_city_suggestion         # payload-only: the "Yes" button on a typo-correction prompt
+  - clear_conversation             # payload-only: the "Clear conversation" button (see actions/fallback.py)
+  - change_destination_city        # content drifting: change the destination at ANY point in trip_planning_form / book_confirmation_form
+  - ask_trip_to_this_city          # content drifting: drift from Weather Checking into Trip Assistant, same city
+
+entities:
+  - origin_city
+  - destination_city
+  - city_name
+  - num_travelers
+  - budget_amount
+  - currency_code
+  - sustainability_level
+  - priority_focus
+  - from_currency
+  - to_currency
+  - amount
+  - contact_info
+  - travel_date_from
+  - weather_day_text
+
+slots:
+  # ---- trip-planning form slots --------------------------------------------
+  # NOTE ON ORDER: destination is asked BEFORE origin (Q1/Q2 in that order
+  # per the project's architecture spec) — see forms.trip_planning_form
+  # below for the actual required_slots ordering; the slot definitions
+  # themselves don't care about order, only the form's list does.
+  destination_city:
+    type: text
+    influence_conversation: true
+    mappings:
+      # FIX (real-execution root-cause, this round — replaces the
+      # from_entity/from_text mappings that used to live here):
+      # extraction for this slot is now delegated ENTIRELY to the
+      # custom `extract_destination_city` method on
+      # ValidateTripPlanningForm (actions.py).
+      #
+      # Why this changed: Rasa only calls a form's custom
+      # `extract_<slot>` method for a slot whose OWN domain.yml mapping
+      # type is `custom` — a slot mapped as from_entity/from_text is
+      # filled straight from THAT declarative mapping instead, and the
+      # custom Python method is never invoked at all, no matter how
+      # carefully it's written. This was confirmed directly this round
+      # with a temporary debug print inside extract_destination_city:
+      # it never fired for either "to Dubai" or "i wanna go to dubai"
+      # while from_entity/from_text mappings were still present here,
+      # proving they were winning every time. That's the real root
+      # cause of the reported bug ("i wanna go to dubai" wasn't
+      # understood): with no trained entity for that untrained,
+      # all-lowercase sentence, from_entity found nothing, so
+      # from_text's raw whole-message grab won by default — handing
+      # the ENTIRE sentence "i wanna go to dubai" to
+      # validate_destination_city instead of just "dubai".
+      #
+      # extract_destination_city already contains everything needed:
+      # a strict, Title-Case trigger-word regex ("to X") safe to run
+      # unconditionally on any message (so a combined entry message
+      # like "from Berlin to Lisbon" still fills this slot immediately,
+      # exactly as before), PLUS a lenient any-case "to X" match and a
+      # whole-message fallback, both correctly scoped to only fire
+      # while destination_city is the exact slot being asked about
+      # right now — so the old cross-slot contamination bug this
+      # mapping used to guard against (a stray word getting tagged with
+      # a DIFFERENT city slot's entity type — see project history)
+      # cannot recur either, since DIET's entity typing is no longer
+      # consulted for this slot at all.
+      #
+      # No `action:` is given, so Rasa uses the default: the active
+      # form's own validation action (validate_trip_planning_form) —
+      # the same convention already used below for
+      # pending_city_field/pending_city_suggestion.
+      - type: custom
+
+  origin_city:
+    type: text
+    influence_conversation: true
+    mappings:
+      # See the long comment on destination_city's mapping above — this
+      # is the mirror-image half of the same fix, delegating entirely
+      # to extract_origin_city (actions.py).
+      - type: custom
+
+  travel_date_from:
+    type: text
+    influence_conversation: false
+    mappings:
+      # BUGFIX (real user report): "دنبال تاریخ‌های رفت و برگشت هم بگرده"
+      # — a combined message like "from 2026/12/10 to 2026/12/16" (the
+      # SAME "from X to Y" habit already supported for cities, applied
+      # to dates) used to fill neither date at all, because this slot
+      # only ever looked at the message when travel_date_from was
+      # ALREADY the requested_slot (via the from_entity/from_text
+      # mappings below, both scoped with `conditions`) — i.e. only on a
+      # SEPARATE later turn, one date at a time. Delegated entirely to
+      # extract_travel_date_from (actions.py), which tries a "from
+      # <date phrase> to <date phrase>" split FIRST (safe to run
+      # unconditionally — see that method's own docstring for why) and
+      # falls back to "the whole message is the date" only while this
+      # exact slot is the one being asked right now — same pattern as
+      # destination_city/origin_city above and weather_day_text below.
+      - type: custom
+
+  travel_date_to:
+    type: text
+    influence_conversation: false
+    mappings:
+      # Mirror image of travel_date_from above — see
+      # extract_travel_date_to (actions.py).
+      - type: custom
+
+  num_travelers:
+    type: float
+    influence_conversation: false
+    mappings:
+      # See the "not_intent SCOPE" note on travel_date_from above — same
+      # revised scope (only out_of_scope excluded, not nlu_fallback),
+      # same reason: validate_num_travelers tries its own number/phrase
+      # parsing first now, and only escalates to the fallback system if
+      # that fails too.
+      - type: from_entity
+        entity: num_travelers
+        # change_destination_city added alongside out_of_scope — see
+        # actions.py's _is_content_drift_trigger docstring: this is the
+        # same not_intent mechanism, extended to the new content-drifting
+        # intent so a "change destination" message mid-form leaves this
+        # slot's candidate empty instead of being swallowed as a bogus
+        # traveller-count answer.
+        #
+        # The other 5 intents (ask_weather, ask_currency_exchange,
+        # ask_human_advisor, see_hotel_list, see_cities_list) are the
+        # general task-switch feature — see actions.py's
+        # _is_foreign_task_switch docstring: same mechanism again, this
+        # time so ANY of the other 5 top-level tasks asked for mid this
+        # form leaves this slot's candidate empty too, instead of being
+        # swallowed the same way. ask_trip_planning (this form's OWN
+        # entry intent) is deliberately NOT in this list — that's not a
+        # foreign task, it's just this same flow continuing.
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: num_travelers
+      - type: from_text
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: num_travelers
+
+  budget_amount:
+    type: float
+    influence_conversation: false
+    mappings:
+      # See the "not_intent SCOPE" note on travel_date_from above.
+      - type: from_entity
+        entity: budget_amount
+        # See num_travelers' not_intent comment above — same fix.
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: budget_amount
+      - type: from_text
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: budget_amount
+
+  budget_currency:
+    type: text
+    influence_conversation: false
+    initial_value: "EUR"
+    mappings:
+      - type: from_entity
+        entity: currency_code
+
+  sustainability_level:
+    type: text
+    influence_conversation: true
+    mappings:
+      # This is the exact slot the user's own real-conversation report
+      # caught being falsely filled while "Roma" was being confirmed as
+      # destination_city — see the long comment on travel_date_from
+      # above for the full explanation.
+      - type: from_entity
+        entity: sustainability_level
+        # See num_travelers' not_intent comment above — same fix.
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: sustainability_level
+      - type: from_text
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: sustainability_level
+
+  priority_focus:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: priority_focus
+        # See num_travelers' not_intent comment above — same fix.
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: priority_focus
+      - type: from_text
+        not_intent: [out_of_scope, change_destination_city, ask_weather, ask_currency_exchange, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: trip_planning_form
+            requested_slot: priority_focus
+
+  # ---- typo-correction bookkeeping (see actions/actions.py's
+  # _match_city_or_ask / ActionAcceptCitySuggestion) — set only by
+  # custom actions, never by the user directly, hence `type: custom`.
+  # Shared across trip_planning_form, weather_check_form and
+  # hotel_list_form — all three ask for a city and all three route
+  # through the same fuzzy-match confirmation flow.
+  pending_city_field:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  pending_city_suggestion:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  # ---- weather checking form slots -----------------------------------------
+  weather_city:
+    type: text
+    influence_conversation: true
+    mappings:
+      # Same fix as trip_planning_form's city slots above (see
+      # destination_city's long comment for the full, real-execution
+      # root cause) — delegated entirely to extract_weather_city
+      # (actions.py), which already implements the lenient/whole-
+      # message fallback logic, requested-slot-scoped.
+      - type: custom
+
+  # ---- content drifting (see actions.py's ActionStartTripFromWeatherDrift)
+  # weather_city and hotel_list_city are both reset to None the moment
+  # their form submits (see ActionAnswerWeatherCheck / ActionAnswerHotelList)
+  # — always have, so a LATER, unrelated check never starts pre-filled with
+  # a stale city. This mirrors the same value at the one place it's about
+  # to disappear, purely so a "want to go there?" drift request still works
+  # AFTER the Finish button has already printed. Both flows write to this
+  # ONE slot, so whichever city the user looked at most recently (weather
+  # or hotel list) is the one "there" refers to. Only ever read by that
+  # one action.
+  last_checked_city:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  weather_day_text:
+    type: text
+    influence_conversation: false
+    mappings:
+      # BUGFIX (real user report): a combined sentence like "check the
+      # weather of Tehran this weekend" or "what is Berlin's weather
+      # today?" names the city AND the day in one message — but the old
+      # from_entity/from_text mapping only ever looked at THIS slot
+      # when weather_day_text was ALREADY the requested_slot, i.e. only
+      # on a SEPARATE later turn. That meant the day mention in the
+      # user's very first message was silently thrown away and the bot
+      # asked "Which day...?" from scratch even when they'd already
+      # said it. Delegated entirely to extract_weather_day_text
+      # (actions.py), which tries to resolve a date/relative-day phrase
+      # out of ANY message (not just when this slot is the one being
+      # asked) — safe to do unconditionally because date_resolver only
+      # recognises a narrow, specific set of real date phrases, so it
+      # can't accidentally misfire on an unrelated answer the way a
+      # bare "assume the whole message" guess could.
+      - type: custom
+
+  # ---- currency exchange form slots ----------------------------------------
+  # NOTE: from_currency/to_currency deliberately do NOT get the
+  # requested_slot condition on their from_entity mapping (unlike every
+  # other slot in this file) — verified via a real run that conditioning
+  # them breaks the 10 "EUR -> USD"-style pair buttons in
+  # action_ask_from_currency: ONE click sends BOTH currencies as
+  # entities in a single message while only from_currency is the
+  # requested_slot at that moment, so a requested_slot-scoped mapping
+  # would silently drop the to_currency half and make the form ask it
+  # again from scratch. Left unconditional on purpose.
+  from_currency:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: from_currency
+      # not_intent added here (the from_text catch-all only — the
+      # unconditioned from_entity mapping above is deliberately left
+      # exactly as-is, per the pair-button note above it) as part of the
+      # same uniform fallback-system fix applied to every other slot in
+      # this file — see destination_city's long comment for the real,
+      # execution-verified root cause. The 5 foreign entry intents
+      # (everything in _ENTRY_POINT_TARGETS except this form's own
+      # ask_currency_exchange) are the general task-switch feature — see
+      # actions.py's _is_foreign_task_switch docstring.
+      - type: from_text
+        not_intent: [out_of_scope, nlu_fallback, ask_trip_planning, ask_weather, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: currency_exchange_form
+            requested_slot: from_currency
+
+  to_currency:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: to_currency
+      # See the "not_intent SCOPE" note on travel_date_from above. See
+      # from_currency's not_intent comment above — same task-switch fix.
+      - type: from_text
+        not_intent: [out_of_scope, ask_trip_planning, ask_weather, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: currency_exchange_form
+            requested_slot: to_currency
+
+  exchange_amount:
+    type: float
+    influence_conversation: false
+    mappings:
+      # See from_currency's not_intent comment above — same task-switch fix.
+      - type: from_entity
+        entity: amount
+        not_intent: [out_of_scope, ask_trip_planning, ask_weather, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: currency_exchange_form
+            requested_slot: exchange_amount
+      - type: from_text
+        not_intent: [out_of_scope, ask_trip_planning, ask_weather, ask_human_advisor, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: currency_exchange_form
+            requested_slot: exchange_amount
+
+  # ---- human advisor form slot ---------------------------------------------
+  contact_info:
+    type: text
+    influence_conversation: false
+    mappings:
+      # not_intent extended with the 5 foreign entry intents (everything
+      # in _ENTRY_POINT_TARGETS except this form's own ask_human_advisor)
+      # — the general task-switch feature, see actions.py's
+      # _is_foreign_task_switch docstring.
+      - type: from_entity
+        entity: contact_info
+        not_intent: [out_of_scope, nlu_fallback, ask_trip_planning, ask_weather, ask_currency_exchange, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: human_advisor_form
+            requested_slot: contact_info
+      - type: from_text
+        not_intent: [out_of_scope, nlu_fallback, ask_trip_planning, ask_weather, ask_currency_exchange, see_hotel_list, see_cities_list]
+        conditions:
+          - active_loop: human_advisor_form
+            requested_slot: contact_info
+
+  # ---- hotel-list sub-button form slot --------------------------------------
+  hotel_list_city:
+    type: text
+    influence_conversation: false
+    mappings:
+      # Same fix as destination_city/weather_city above — delegated
+      # entirely to extract_hotel_list_city (actions.py).
+      - type: custom
+
+  # ---- results storage — written only by custom actions -------------------
+  trip_results:
+    type: any
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  booking_reference:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  # ---- "Would you like to book this?" (book_confirmation_form) -------------
+  # BUGFIX (real user report): this used to be a plain question sent
+  # straight from action_generate_trip_recommendations
+  # (dispatcher.utter_message(response="utter_ask_book_confirmation")),
+  # answered only via the confirm_booking/deny_booking trained intents.
+  # Typing a natural yes/no ("good", "it's ok", "yea do it", "no need",
+  # "I need to think again", ...) instead of clicking a button, or
+  # DIET misclassifying the reply at all, meant Rasa had no active
+  # form/slot to fall back on — the reply fell straight through to
+  # action_smart_fallback with no pending_slot, which (correctly, for a
+  # genuinely idle moment) shows the generic "choose one of these" menu
+  # instead of re-asking "Would you like to book this?" — precisely the
+  # broken loop reported. Turning this into a tiny one-slot form (same
+  # pattern as hotel_list_form) fixes both problems at once: the
+  # slot's own custom extractor (see ValidateBookConfirmationForm in
+  # actions.py) captures ANY raw text regardless of how DIET classified
+  # it — exactly like the destination/origin city fix elsewhere in this
+  # file — and its validate_ method checks that text against a broad,
+  # deterministic set of yes/no phrasings before ever falling back, and
+  # while active, active_loop is correctly set so action_smart_fallback
+  # sees a real pending_slot and apologises-then-reasks instead of
+  # showing the generic menu.
+  book_confirmation:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  # ---- "Finish" / awaiting_finish bookkeeping -------------------------------
+  # Set True by any action that shows a "Finish / main menu" button (end of
+  # a completed process, or the 3rd-strike off-topic give-up). While True,
+  # any message that ISN'T the Finish button itself gets redirected — see
+  # rules.yml's "awaiting finish" rules and actions.py's ActionAwaitingFinishReminder.
+  awaiting_finish:
+    type: bool
+    influence_conversation: false
+    initial_value: false
+    mappings:
+      - type: custom
+
+  # ---- fallback / handover bookkeeping (see actions/fallback.py) ----------
+  fallback_streak:
+    type: float
+    influence_conversation: false
+    initial_value: 0
+    mappings:
+      - type: custom
+
+  fallback_total_giveups:
+    type: float
+    influence_conversation: false
+    initial_value: 0
+    mappings:
+      - type: custom
+
+  handover_active:
+    type: bool
+    influence_conversation: false
+    initial_value: false
+    mappings:
+      - type: custom
+
+forms:
+  trip_planning_form:
+    required_slots:
+      - destination_city             # Q1 — "Where would you like to travel to?"
+      - origin_city                  # Q2 — "Where would you like to travel from?"
+      - travel_date_from             # Q3
+      - travel_date_to               # Q4
+      - num_travelers                # Q5
+      - budget_amount                # Q6
+      - sustainability_level         # Q7
+      - priority_focus                # Q8, adaptive — see note below
+      # `priority_focus` IS listed here even though it's only asked
+      # adaptively (see ValidateTripPlanningForm.required_slots() in
+      # actions.py) — Rasa 3.6's validator requires any slot with an
+      # active_loop-conditioned mapping to appear in its form's
+      # required_slots, or `rasa train` fails validation outright. The
+      # adaptive behaviour still works: required_slots() REMOVES this
+      # slot from the runtime list unless sustainability_level == "high",
+      # rather than adding it when high — same end result, satisfies the
+      # validator either way.
+
+  weather_check_form:
+    required_slots:
+      - weather_city
+      - weather_day_text
+
+  currency_exchange_form:
+    required_slots:
+      - from_currency
+      - to_currency
+      # `to_currency` is usually already filled by the same message/button
+      # that filled from_currency (a pair button sets both entities at
+      # once; typed "EUR to USD" is parsed by extract_from_currency in
+      # actions.py) — it's still listed here as a safety net for the
+      # rare case only one half came through.
+      - exchange_amount
+
+  human_advisor_form:
+    required_slots:
+      - contact_info
+
+  hotel_list_form:
+    required_slots:
+      - hotel_list_city
+
+  book_confirmation_form:
+    required_slots:
+      - book_confirmation
+
+responses:
+  utter_greet:
+    - text: >-
+        Hi, I'm MGH Travel Chatbot 🌍 — I can plan a lower-carbon
+        trip end-to-end, check the weather anywhere, convert currencies,
+        or connect you with a human advisor. Pick an option below, or
+        just tell me where you're headed.
+
+  utter_goodbye:
+    - text: "Safe and sustainable travels! Come back any time you're planning your next trip. 👋"
+
+  utter_bot_challenge:
+    - text: >-
+        I'm MGH Travel Chatbot, a conversational assistant built on Rasa for
+        this course project. I can help with four things: planning a full
+        low-carbon trip (flights, hotels, transport, weather, attractions),
+        checking the weather anywhere, converting currencies, or putting you
+        in touch with a human travel advisor. I'm not a person on the other
+        end, but I use live map, weather and currency data to answer.
+
+  utter_thank_you:
+    - text: "You're welcome! Anything else I can help you plan?"
+
+  # ---- Trip Assistant & Booking: Q1-Q8 --------------------------------------
+  # NOTE: destination_city, origin_city and travel_date_from deliberately
+  # have NO utter_ask_ response here — see actions.py's
+  # ActionAskDestinationCity / ActionAskOriginCity / ActionAskTravelDateFrom
+  # and domain.yml's `actions:` list below. When both an `action_ask_<slot>`
+  # AND a `utter_ask_<slot>` exist for the same slot, Rasa Core prefers the
+  # custom action, so only ONE of the two is defined per slot to avoid any
+  # ambiguity about which one fires.
+
+  utter_ask_travel_date_to:
+    - text: "And when are you going to come back? (Specify a day or provide a specific date like 2026/12/16.)"
+
+  utter_ask_num_travelers:
+    - text: "How many people are travelling?"
+      buttons:
+        - title: "Just me"
+          payload: '/inform_num_travelers{"num_travelers": "1"}'
+        - title: "2"
+          payload: '/inform_num_travelers{"num_travelers": "2"}'
+        - title: "3"
+          payload: '/inform_num_travelers{"num_travelers": "3"}'
+        - title: "4 or more"
+          payload: '/inform_num_travelers{"num_travelers": "4"}'
+
+  utter_ask_budget_amount:
+    - text: "What's your total budget for the trip? You can type an amount (e.g. \"430 EUR\") or pick a range:"
+      buttons:
+        - title: "Under €350"
+          payload: '/inform_budget_amount{"budget_amount": "300"}'
+        - title: "€350 – €850"
+          payload: '/inform_budget_amount{"budget_amount": "600"}'
+        - title: "€850 – €1300"
+          payload: '/inform_budget_amount{"budget_amount": "1075"}'
+        - title: "€1300 – €2100"
+          payload: '/inform_budget_amount{"budget_amount": "1700"}'
+        - title: "€2100+"
+          payload: '/inform_budget_amount{"budget_amount": "2500"}'
+
+  utter_ask_sustainability_level:
+    - text: "How much do you want sustainability to drive these recommendations?"
+      buttons:
+        - title: "🌱 Prioritise low carbon"
+          payload: '/inform_sustainability_level{"sustainability_level": "high"}'
+        - title: "⚖️ Balance carbon and cost"
+          payload: '/inform_sustainability_level{"sustainability_level": "medium"}'
+        - title: "💸 Prioritise low cost"
+          payload: '/inform_sustainability_level{"sustainability_level": "low"}'
+
+  utter_ask_priority_focus:
+    - text: "Since low-carbon travel matters most to you, one more thing: what should I optimise for first when options trade off against each other?"
+      buttons:
+        - title: "Lowest carbon, whatever it costs"
+          payload: '/inform_priority_focus{"priority_focus": "carbon"}'
+        - title: "Lowest cost, within reason"
+          payload: '/inform_priority_focus{"priority_focus": "cost"}'
+        - title: "Balanced"
+          payload: '/inform_priority_focus{"priority_focus": "balanced"}'
+
+  utter_ask_book_confirmation:
+    - text: "Would you like to book this?"
+      buttons:
+        - title: "✅ Yes, book it"
+          payload: "/confirm_booking"
+        - title: "No, not this time"
+          payload: "/deny_booking"
+
+  # ---- Weather Checking ------------------------------------------------------
+  # weather_city has no utter_ask_ response — see actions.py's
+  # ActionAskWeatherCity (stays silent while a typo confirmation for
+  # this slot is pending; same reasoning as the trip-planning note above).
+
+  utter_ask_weather_day_text:
+    - text: "Is there a specific day you have in mind? (e.g. 2026/12/16)"
+      buttons:
+        - title: "Today"
+          payload: '/inform_dates{"weather_day_text": "today"}'
+        - title: "Tomorrow"
+          payload: '/inform_dates{"weather_day_text": "tomorrow"}'
+        - title: "This weekend"
+          payload: '/inform_dates{"weather_day_text": "this weekend"}'
+        - title: "Next weekend"
+          payload: '/inform_dates{"weather_day_text": "next weekend"}'
+        - title: "Next Sunday"
+          payload: '/inform_dates{"weather_day_text": "next Sunday"}'
+        - title: "Next week, this day"
+          payload: '/inform_dates{"weather_day_text": "next week"}'
+
+  # ---- Currency Exchange -------------------------------------------------------
+  # from_currency ALSO has no utter_ask_ response — see action_ask_from_currency
+  # (10 common-pair buttons) — same reasoning as the trip-planning note above.
+
+  utter_ask_exchange_amount:
+    - text: "How much amount? (e.g. 500, 1000, 350, …)"
+
+  # ---- Human Advisor -------------------------------------------------------------
+  utter_ask_contact_info:
+    - text: "Sure — please share an email or phone number so one of our specialists can reach you as soon as possible. If you already have a reference code from a previous request, please include that as well."
+
+  # ---- Trip Assistant sub-buttons -------------------------------------------
+  # hotel_list_city ALSO has no utter_ask_ response — see
+  # ActionAskHotelListCity, same reasoning.
+
+  # ---- shared: Finish button -------------------------------------------------
+  # BUGFIX (real user request): wording + button label updated uniformly
+  # everywhere this button appears — this response, utter_awaiting_finish_reminder
+  # below, AND the hardcoded _TRIP_SUMMARY_BUTTONS in actions.py (used after
+  # a booking is confirmed, where there's no "Is there anything else…"
+  # message at all — just the trip summary text + this same button).
+  utter_finish_button:
+    - text: "Thank you for using this bot, your task is done successfully. Please click the FINISH button from new commands."
+      buttons:
+        - title: "Finish / main menu"
+          payload: "/finish"
+
+  utter_awaiting_finish_reminder:
+    - text: "Your task completed successfully — please click Finish / main menu below to use the bot's features again."
+      buttons:
+        - title: "Finish / main menu"
+          payload: "/finish"
+
+  utter_ask_rephrase:
+    - text: "Could you say that a different way?"
+
+  utter_default:
+    - text: "Sorry, I'm not sure how to help with that."
+
+  utter_handover_notice:
+    - text: "🧑‍💼 You're now connected with a human travel advisor. They'll pick up from exactly where we left off — no need to repeat yourself."
+
+  utter_carbon_offset_info:
+    - text: >-
+        Carbon offsetting means paying into a verified project (reforestation,
+        renewable energy, methane capture) that removes or avoids roughly as
+        much CO2e as your trip produces. It doesn't cancel out the emissions
+        from your journey — the flight still happened — but it's one way to
+        fund climate mitigation elsewhere. Two widely-used, independently
+        audited registries are Gold Standard (goldstandard.org) and Atmosfair
+        (atmosfair.de), both of which let you calculate and offset a specific
+        flight. This project doesn't integrate a live offsetting API — that
+        would involve real payment processing, which is out of scope for a
+        coursework prototype — so treat this as pointing you to a real option
+        rather than a built-in feature.
+
+actions:
+  - action_route_entry_point
+  - action_ask_destination_city
+  - action_ask_origin_city
+  - action_ask_travel_date_from
+  - action_ask_weather_city
+  - action_ask_hotel_list_city
+  - action_ask_from_currency
+  - action_generate_trip_recommendations
+  - action_deny_booking
+  - action_offset_and_finish
+  - action_get_carbon_footprint
+  - action_confirm_booking
+  - action_route_book_confirmation
+  - action_see_more_options
+  - action_handover_to_human
+  - action_smart_fallback
+  - action_clear_conversation
+  - action_answer_weather_check
+  - action_answer_currency_exchange
+  - action_submit_human_advisor
+  - action_show_cities_list
+  - action_answer_hotel_list
+  - action_finish
+  - action_handle_destination_change
+  - action_start_trip_from_weather_drift
+  - action_handle_task_switch
+  - validate_trip_planning_form
+  - validate_weather_check_form
+  - validate_currency_exchange_form
+  - validate_human_advisor_form
+  - validate_hotel_list_form
+  - validate_book_confirmation_form
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

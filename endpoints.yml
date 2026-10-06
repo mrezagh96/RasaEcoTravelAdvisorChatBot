@@ -1,0 +1,30 @@
+# =============================================================================
+#  endpoints.yml — Eco-Travel Advisor
+# =============================================================================
+# action_endpoint points at the custom actions server (rasa run actions,
+# default port 5055).
+# =============================================================================
+
+action_endpoint:
+  url: "http://localhost:5055/webhook"
+  # action_generate_trip_recommendations fans out to several external APIs
+  # (see actions/actions.py — parallelised, but Overpass in particular can
+  # still be slow). Rasa's own default wait for the action server is
+  # shorter than that worst case, so it's raised explicitly here rather
+  # than left implicit.
+  request_timeout: 60
+
+# NOTE ON DOCKER: Rasa's YAML loader does NOT perform shell-style ${VAR}
+# substitution — that syntax only works inside docker-compose.yml itself,
+# not in files Rasa reads. localhost is correct for plain local dev AND
+# for the single combined HF Spaces container (start.sh runs the action
+# server in the SAME container, so it's on localhost there too). Only the
+# docker-compose.yml multi-container setup needs a different host
+# ("actions" instead of "localhost") — that service's `command:` rewrites
+# this file with sed before starting Rasa; see docker-compose.yml.
+
+# tracker_store: left as the default in-memory store (InMemoryTrackerStore).
+# For this coursework deployment that is a deliberate, documented choice —
+# see README.md "Known limitations" — a persistent store (SQL/Redis) would
+# be the production upgrade path but adds a database dependency that isn't
+# justified for a demo on HuggingFace Spaces' free tier.

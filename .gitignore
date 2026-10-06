@@ -1,0 +1,74 @@
+# =========================
+# Rasa
+# =========================
+
+models/
+.rasa/
+*.tar.gz
+
+# rasa test nlu / rasa test core output (confusion matrices, histograms,
+# JSON reports) — regenerated on demand, see README.md's "Testing" section.
+results/
+
+
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+
+
+# =========================
+# Virtual Environment
+# =========================
+
+.venv/
+venv/
+env/
+ENV/
+
+
+# =========================
+# Environment / Secrets
+# =========================
+
+.env
+.env.*
+!.env.example
+
+.streamlit/secrets.toml
+
+
+# =========================
+# Jupyter
+# =========================
+
+.ipynb_checkpoints/
+
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+
+
+# =========================
+# Operating System
+# =========================
+
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+
+.vs/

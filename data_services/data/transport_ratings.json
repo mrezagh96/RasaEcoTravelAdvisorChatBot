@@ -1,0 +1,112 @@
+{
+  "berlin": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "Extensive U-Bahn, S-Bahn, tram and bus network."
+  },
+  "paris": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "Dense Metro network with over 300 stations city-wide."
+  },
+  "london": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "The Underground plus extensive bus and rail coverage."
+  },
+  "tokyo": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "One of the world's busiest and most extensive metro/rail systems."
+  },
+  "new york": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "24/7 subway system covering most of the city."
+  },
+  "amsterdam": {
+    "rating": "excellent",
+    "stop_count_estimate": 20,
+    "note": "Trams, metro and one of the best cycling infrastructures in the world."
+  },
+  "vienna": {
+    "rating": "excellent",
+    "stop_count_estimate": 20,
+    "note": "U-Bahn, tram and bus network rated among Europe's best."
+  },
+  "seoul": {
+    "rating": "excellent",
+    "stop_count_estimate": 25,
+    "note": "Extensive, modern subway network."
+  },
+  "hong kong": {
+    "rating": "excellent",
+    "stop_count_estimate": 20,
+    "note": "MTR metro system reaches almost the entire territory."
+  },
+  "singapore": {
+    "rating": "excellent",
+    "stop_count_estimate": 20,
+    "note": "MRT metro network with high reliability."
+  },
+  "moscow": {
+    "rating": "excellent",
+    "stop_count_estimate": 20,
+    "note": "Extensive, frequent metro system."
+  },
+  "madrid": {
+    "rating": "excellent",
+    "stop_count_estimate": 18,
+    "note": "One of the largest metro networks in Europe."
+  },
+  "prague": {
+    "rating": "good",
+    "stop_count_estimate": 12,
+    "note": "Compact metro plus tram network covers the city well."
+  },
+  "copenhagen": {
+    "rating": "good",
+    "stop_count_estimate": 10,
+    "note": "Metro, S-train and strong cycling culture."
+  },
+  "rome": {
+    "rating": "moderate",
+    "stop_count_estimate": 8,
+    "note": "Smaller metro network than other European capitals; buses fill gaps."
+  },
+  "lisbon": {
+    "rating": "good",
+    "stop_count_estimate": 10,
+    "note": "Metro, trams and funiculars cover the hilly city centre."
+  },
+  "istanbul": {
+    "rating": "good",
+    "stop_count_estimate": 12,
+    "note": "Growing metro network plus extensive ferries across the Bosphorus."
+  },
+  "dubai": {
+    "rating": "moderate",
+    "stop_count_estimate": 6,
+    "note": "Modern but limited-coverage metro; a car is often still useful."
+  },
+  "tehran": {
+    "rating": "good",
+    "stop_count_estimate": 10,
+    "note": "Metro network covers much of the city, supplemented by BRT bus lines."
+  },
+  "tabriz": {
+    "rating": "moderate",
+    "stop_count_estimate": 5,
+    "note": "A smaller metro network supplements buses; less coverage than Tehran."
+  },
+  "cairo": {
+    "rating": "moderate",
+    "stop_count_estimate": 6,
+    "note": "Africa's oldest metro system, but coverage is limited relative to the city's size."
+  },
+  "los angeles": {
+    "rating": "limited",
+    "stop_count_estimate": 2,
+    "note": "Historically car-dependent; rail network is expanding but still limited."
+  }
+}

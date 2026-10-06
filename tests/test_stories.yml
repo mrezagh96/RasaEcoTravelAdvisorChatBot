@@ -1,0 +1,524 @@
+version: "3.1"
+
+# =============================================================================
+# tests/test_stories.yml — Rasa CORE / DIALOGUE test stories
+# (assignment Section 5, "Dialogue Testing": "Run `rasa test core` to
+# assess story transitions, edge-case handling, and fallback performance.
+# Extend test stories to cover variations in user requests and
+# sustainability preferences.")
+# =============================================================================
+# Run with:
+#   .venv/bin/rasa test core --stories tests/test_stories.yml -m models/eco-travel-advisor.tar.gz --out results/core
+#
+# SCOPE / WHAT THIS FILE TESTS: `rasa test core` evaluates ONLY the trained
+# dialogue policies' (RulePolicy/MemoizationPolicy/TEDPolicy) next-action
+# PREDICTIONS against the sequence declared below — it does not execute any
+# real custom action code (no external API calls happen), and every step
+# here uses `intent:`/`entities:` (never raw `user:` text), so NLU accuracy
+# is never a factor here either — that is deliberately covered separately by
+# tests/test_nlu.yml and `rasa test nlu --cross-validation` (the
+# assignment's two sub-sections are tested by two different, purpose-built
+# mechanisms, which keeps a dialogue-logic regression from ever being masked
+# by an unrelated NLU accuracy dip, or vice versa).
+#
+# WHY SOME STORIES START MID-LOOP (`active_loop: <form>` as literally the
+# first step, with no preceding `action_route_entry_point`) — found via a
+# real, executed `rasa test core` run against this exact suite, not assumed:
+# every flow-starting intent funnels through ONE shared custom action,
+# action_route_entry_point, which decides at runtime (plain Python,
+# FollowupAction — see that action's own docstring in actions.py) whether
+# to activate the requested form. That hand-off is DELIBERATELY not a
+# trained rule/story transition (data/stories.yml's own header comment
+# explains why: encoding it statically makes `rasa train` fail with
+# "InvalidRule: Contradicting rules or stories found", since the two
+# possible next actions for the same intent can't be statically
+# reconciled). `rasa test core` only evaluates POLICY predictions, never
+# live action code, so it has no way to "see" that runtime hand-off either
+# — a first attempt at this file asserted it anyway and every single one of
+# those stories failed with `predicted: action_listen`, confirming this
+# transition is genuinely unlearnable by design, not a bug. The fix,
+# applied uniformly below: a handful of short, dedicated "entry routing"
+# stories test ONLY the part that IS learnable (intent ->
+# action_route_entry_point), exactly mirroring data/stories.yml's own
+# stories; every other story tests a form's INTERNAL behaviour (slot
+# filling, content drift, task switching, fallback recovery, submission) by
+# starting with the loop already active — which RulePolicy's own
+# condition-scoped rules (rules.yml) correctly predict through in full,
+# confirmed 100% accurate against a minimal probe before this full file was
+# written. The exact same reasoning applies to the other two
+# FollowupAction-based dynamic hand-offs in this project (confirmed in
+# actions.py): action_generate_trip_recommendations -> book_confirmation_form,
+# and action_handle_task_switch -> <the newly-activated form> — both are
+# tested the same way (a short story for the learnable half, a separate
+# story starting mid-loop for the other form's own internal behaviour,
+# which is already covered by that form's own happy-path story anyway).
+#
+# A custom slot (`type: custom` in domain.yml, e.g. destination_city,
+# weather_day_text, book_confirmation) is represented with an explicit
+# `slot_was_set:` step standing in for what its custom extractor would
+# have produced — the standard Rasa convention for testing a form whose
+# extraction logic lives in Python rather than in from_entity/from_text
+# mappings. Every turn where a form re-predicts itself is preceded by a
+# real user turn (even a minimal one) — two form-action predictions in a
+# row with no user turn in between is invalid and was fixed here after the
+# same probe surfaced it as a real, reproduced story-authoring mistake.
+# =============================================================================
+
+stories:
+
+# ======================= 1. ENTRY-POINT ROUTING ==============================
+# The one learnable part of every flow's hand-off: does the right intent
+# correctly reach action_route_entry_point? (Mirrors data/stories.yml's own
+# stories, extended to cover all 6 entry intents, not just 3.)
+
+- story: trip planning entry routing
+  steps:
+  - intent: ask_trip_planning
+  - action: action_route_entry_point
+
+- story: weather check entry routing
+  steps:
+  - intent: ask_weather
+  - action: action_route_entry_point
+
+- story: currency exchange entry routing
+  steps:
+  - intent: ask_currency_exchange
+  - action: action_route_entry_point
+
+- story: human advisor entry routing
+  steps:
+  - intent: ask_human_advisor
+  - action: action_route_entry_point
+
+- story: hotel list entry routing
+  steps:
+  - intent: see_hotel_list
+  - action: action_route_entry_point
+
+- story: cities list entry routing
+  steps:
+  - intent: see_cities_list
+  - action: action_route_entry_point
+
+# ======================= 2. TRIP PLANNING FORM — HAPPY PATHS =================
+
+- story: trip planning happy path, sustainability HIGH -> asks priority_focus
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - destination_city: "Lisbon"
+  - slot_was_set:
+    - destination_city: "Lisbon"
+  - action: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Berlin"
+  - slot_was_set:
+    - origin_city: "Berlin"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_from: "2026-12-10"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_to: "2026-12-17"
+  - action: trip_planning_form
+  - intent: inform_num_travelers
+    entities:
+    - num_travelers: "2"
+  - action: trip_planning_form
+  - intent: inform_budget_amount
+    entities:
+    - budget_amount: "900"
+  - action: trip_planning_form
+  - intent: inform_sustainability_level
+    entities:
+    - sustainability_level: "high"
+  - action: trip_planning_form
+  - intent: inform_priority_focus
+    entities:
+    - priority_focus: "carbon"
+  - action: trip_planning_form
+  - active_loop: null
+  - action: action_generate_trip_recommendations
+
+- story: trip planning happy path, sustainability LOW -> priority_focus is skipped (sustainability-preference variation 1)
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Munich"
+    - destination_city: "Vienna"
+  - slot_was_set:
+    - destination_city: "Vienna"
+    - origin_city: "Munich"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_from: "2026-11-02"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_to: "2026-11-09"
+  - action: trip_planning_form
+  - intent: inform_num_travelers
+    entities:
+    - num_travelers: "1"
+  - action: trip_planning_form
+  - intent: inform_budget_amount
+    entities:
+    - budget_amount: "400"
+  - action: trip_planning_form
+  - intent: inform_sustainability_level
+    entities:
+    - sustainability_level: "low"
+  - action: trip_planning_form
+  - active_loop: null
+  - action: action_generate_trip_recommendations
+
+- story: trip planning happy path, sustainability MEDIUM -> priority_focus is also skipped (sustainability-preference variation 2)
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Madrid"
+    - destination_city: "Rome"
+  - slot_was_set:
+    - destination_city: "Rome"
+    - origin_city: "Madrid"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_from: "2026-10-20"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_to: "2026-10-25"
+  - action: trip_planning_form
+  - intent: inform_num_travelers
+    entities:
+    - num_travelers: "4"
+  - action: trip_planning_form
+  - intent: inform_budget_amount
+    entities:
+    - budget_amount: "1600"
+  - action: trip_planning_form
+  - intent: inform_sustainability_level
+    entities:
+    - sustainability_level: "medium"
+  - action: trip_planning_form
+  - active_loop: null
+  - action: action_generate_trip_recommendations
+
+# ======================= 3. BOOK CONFIRMATION FORM ===========================
+# Reached only via a FollowupAction from action_generate_trip_recommendations
+# (see domain.yml's book_confirmation slot comment) — a dynamic hand-off,
+# same as action_route_entry_point's (see the file header), so this starts
+# mid-loop rather than chaining on from a trip-planning story.
+
+- story: user confirms the booking after trip recommendations
+  steps:
+  - active_loop: book_confirmation_form
+  - intent: confirm_booking
+  - slot_was_set:
+    - book_confirmation: "yes"
+  - action: book_confirmation_form
+  - active_loop: null
+  - action: action_route_book_confirmation
+
+- story: user declines the booking after trip recommendations
+  steps:
+  - active_loop: book_confirmation_form
+  - intent: deny_booking
+  - slot_was_set:
+    - book_confirmation: "no"
+  - action: book_confirmation_form
+  - active_loop: null
+  - action: action_route_book_confirmation
+
+- story: change destination again during book confirmation
+  steps:
+  - active_loop: book_confirmation_form
+  - intent: change_destination_city
+    entities:
+    - destination_city: "Porto"
+  - action: action_handle_destination_change
+
+# ======================= 4. WEATHER / CURRENCY / ADVISOR / HOTELS ===========
+
+- story: weather check happy path, city and day given on separate turns
+  steps:
+  - active_loop: weather_check_form
+  - intent: ask_weather
+    entities:
+    - city_name: "Oslo"
+  - slot_was_set:
+    - weather_city: "Oslo"
+  - action: weather_check_form
+  - intent: inform_dates
+  - slot_was_set:
+    - weather_day_text: "this weekend"
+  - action: weather_check_form
+  - active_loop: null
+  - action: action_answer_weather_check
+
+- story: weather check happy path, city and day given together in one message
+  steps:
+  - active_loop: weather_check_form
+  - intent: ask_weather
+    entities:
+    - city_name: "Tehran"
+  - slot_was_set:
+    - weather_city: "Tehran"
+    - weather_day_text: "today"
+  - action: weather_check_form
+  - active_loop: null
+  - action: action_answer_weather_check
+
+- story: currency exchange happy path, one message gives both currencies
+  steps:
+  - active_loop: currency_exchange_form
+  - intent: ask_currency_exchange
+    entities:
+    - from_currency: "USD"
+    - to_currency: "EUR"
+  - slot_was_set:
+    - from_currency: "USD"
+    - to_currency: "EUR"
+  - action: currency_exchange_form
+  - intent: inform_budget_amount
+    entities:
+    - amount: "250"
+  - action: currency_exchange_form
+  - active_loop: null
+  - action: action_answer_currency_exchange
+
+- story: human advisor happy path
+  steps:
+  - active_loop: human_advisor_form
+  - intent: inform_dates
+  - slot_was_set:
+    - contact_info: "advisor@example.com"
+  - action: human_advisor_form
+  - active_loop: null
+  - action: action_submit_human_advisor
+
+- story: hotel list sub-button happy path
+  steps:
+  - active_loop: hotel_list_form
+  - intent: see_hotel_list
+    entities:
+    - city_name: "Rome"
+  - slot_was_set:
+    - hotel_list_city: "Rome"
+  - action: hotel_list_form
+  - active_loop: null
+  - action: action_answer_hotel_list
+
+- story: standalone carbon footprint question with no active trip
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: ask_carbon_footprint
+  - action: action_get_carbon_footprint
+
+- story: carbon offset info question
+  steps:
+  - intent: ask_carbon_offset_info
+  - action: action_offset_and_finish
+
+- story: user asks for a human straight away
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: request_human_handover
+  - action: action_handover_to_human
+
+- story: user asks to see more options after recommendations
+  steps:
+  - intent: see_more_options
+  - action: action_see_more_options
+
+# ======================= 5. CONTENT DRIFT / TASK SWITCHING ===================
+
+- story: change destination mid trip-planning form (content drift does not break the form)
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Berlin"
+    - destination_city: "Rome"
+  - slot_was_set:
+    - destination_city: "Rome"
+    - origin_city: "Berlin"
+  - action: trip_planning_form
+  - intent: change_destination_city
+    entities:
+    - destination_city: "Vienna"
+  - action: action_handle_destination_change
+  - action: trip_planning_form
+  - active_loop: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_from: "2026-11-05"
+  - action: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_to: "2026-11-10"
+  - action: trip_planning_form
+  - intent: inform_num_travelers
+    entities:
+    - num_travelers: "1"
+  - action: trip_planning_form
+  - intent: inform_budget_amount
+    entities:
+    - budget_amount: "550"
+  - action: trip_planning_form
+  - intent: inform_sustainability_level
+    entities:
+    - sustainability_level: "low"
+  - action: trip_planning_form
+  - active_loop: null
+  - action: action_generate_trip_recommendations
+
+- story: task switch from trip planning to weather check mid-form
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Berlin"
+    - destination_city: "Lisbon"
+  - slot_was_set:
+    - destination_city: "Lisbon"
+    - origin_city: "Berlin"
+  - action: trip_planning_form
+  - intent: ask_weather
+  - action: action_handle_task_switch
+
+- story: task switch from weather check to currency exchange mid-form
+  steps:
+  - active_loop: weather_check_form
+  - intent: ask_weather
+    entities:
+    - city_name: "Vienna"
+  - slot_was_set:
+    - weather_city: "Vienna"
+  - action: weather_check_form
+  - intent: ask_currency_exchange
+  - action: action_handle_task_switch
+
+- story: task switch from human advisor request to hotel list mid-form
+  steps:
+  - active_loop: human_advisor_form
+  - intent: see_hotel_list
+  - action: action_handle_task_switch
+
+- story: content drift from weather checking to trip planning, mid-form (same city)
+  steps:
+  - active_loop: weather_check_form
+  - intent: ask_weather
+    entities:
+    - city_name: "Barcelona"
+  - slot_was_set:
+    - weather_city: "Barcelona"
+  - action: weather_check_form
+  - intent: ask_trip_to_this_city
+  - action: action_start_trip_from_weather_drift
+
+- story: content drift from weather checking to trip planning, after Finish (unconditioned rule, no active loop needed)
+  steps:
+  - intent: ask_trip_to_this_city
+  - action: action_start_trip_from_weather_drift
+
+- story: content drift from hotel list to trip planning, after Finish (same unconditioned rule)
+  steps:
+  - active_loop: hotel_list_form
+  - intent: see_hotel_list
+    entities:
+    - city_name: "Rome"
+  - slot_was_set:
+    - hotel_list_city: "Rome"
+  - action: hotel_list_form
+  - active_loop: null
+  - action: action_answer_hotel_list
+  - intent: ask_trip_to_this_city
+  - action: action_start_trip_from_weather_drift
+
+# ======================= 6. FALLBACK / EDGE CASES ============================
+
+- story: three consecutive off-topic messages escalate the same way regardless of mix (out_of_scope and nlu_fallback both count)
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: out_of_scope
+  - action: action_smart_fallback
+  - intent: nlu_fallback
+  - action: action_smart_fallback
+  - intent: out_of_scope
+  - action: action_smart_fallback
+
+- story: off-topic message during trip planning does not break the form
+  steps:
+  - active_loop: trip_planning_form
+  - intent: ask_trip_planning
+    entities:
+    - origin_city: "Berlin"
+    - destination_city: "Lisbon"
+  - slot_was_set:
+    - destination_city: "Lisbon"
+    - origin_city: "Berlin"
+  - action: trip_planning_form
+  - intent: out_of_scope
+  - action: action_smart_fallback
+  - action: trip_planning_form
+  - active_loop: trip_planning_form
+  - intent: inform_dates
+  - slot_was_set:
+    - travel_date_from: "2026-12-10"
+  - action: trip_planning_form
+
+- story: low-confidence (nlu_fallback) message during weather check does not break the form
+  steps:
+  - active_loop: weather_check_form
+  - intent: ask_weather
+    entities:
+    - city_name: "Athens"
+  - slot_was_set:
+    - weather_city: "Athens"
+  - action: weather_check_form
+  - intent: nlu_fallback
+  - action: action_smart_fallback
+  - action: weather_check_form
+  - active_loop: weather_check_form
+  - intent: inform_dates
+  - slot_was_set:
+    - weather_day_text: "next Sunday"
+  - action: weather_check_form
+  - active_loop: null
+  - action: action_answer_weather_check
+
+- story: Finish button is handled at any point
+  steps:
+  - intent: greet
+  - action: utter_greet
+  - intent: finish
+  - action: action_finish
+
+- story: Clear conversation button is handled at any point
+  steps:
+  - intent: out_of_scope
+  - action: action_smart_fallback
+  - intent: clear_conversation
+  - action: action_clear_conversation
+
+- story: bot challenge and thanks are answered without disturbing anything else
+  steps:
+  - intent: bot_challenge
+  - action: utter_bot_challenge
+  - intent: thank_you
+  - action: utter_thank_you
+  - intent: goodbye
+  - action: utter_goodbye

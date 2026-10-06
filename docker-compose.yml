@@ -1,0 +1,77 @@
+# =============================================================================
+# Multi-container topology: four containers built from the SAME image
+# (see Dockerfile); only the start command differs per service.
+#
+# STATUS: this file and the Dockerfile are part of the repository but were
+# NOT used for the submission. The project was run locally as four processes
+# (see README.md, "Quick start - local development"). The file syntax is
+# checked with `docker compose config -q`, but the images were not built and
+# the containers were not started, so treat it as untested.
+#
+# PORTS (secure endpoint handling):
+#   - 8501  Streamlit            published to the network (the only user entry)
+#   - 5005  Rasa server          bound to 127.0.0.1 (this computer only)
+#   - 5055  Rasa action server   bound to 127.0.0.1 (this computer only)
+#   - 8000  data_services        bound to 127.0.0.1 (this computer only)
+# The containers reach each other over the Compose network by service name,
+# so the three internal ports do not need to be open to anyone else. They
+# are bound to 127.0.0.1 only so you can still test them with curl from the
+# same machine. Rasa runs with CORS open and no auth token (see README.md,
+# "Security notes"), so do NOT publish 5005 to the internet as it is.
+#
+# After `docker compose up --build`, wait about two minutes: the Rasa
+# container needs that long to load the model, and Streamlit shows a
+# connection error until it is ready.
+#
+# The single combined container (Dockerfile + start.sh) is the Hugging Face
+# Spaces layout. Hugging Face now requires a paid plan for Docker Spaces
+# (see README.md), so it was not used either.
+# =============================================================================
+
+services:
+  data-services:
+    build: .
+    command: ["uvicorn", "data_services.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  actions:
+    build: .
+    command: ["rasa", "run", "actions", "--port", "5055"]
+    environment:
+      - DATA_SERVICES_URL=http://data-services:8000
+    depends_on:
+      data-services:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5055:5055"
+
+  rasa:
+    build: .
+    # Rasa's YAML loader does NOT expand ${VAR} shell-style substitutions -
+    # that only works inside docker-compose.yml itself. So instead of
+    # relying on an env var Rasa would never actually read, this service's
+    # start command rewrites endpoints.yml's hardcoded "localhost" to the
+    # "actions" service name (Compose's internal DNS) before starting Rasa.
+    command: >
+      sh -c "sed -i 's|http://localhost:5055/webhook|http://actions:5055/webhook|' endpoints.yml &&
+      rasa run --enable-api --cors '*' --port 5005"
+    depends_on:
+      - actions
+    ports:
+      - "127.0.0.1:5005:5005"
+
+  streamlit:
+    build: .
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+    environment:
+      - RASA_URL=http://rasa:5005
+    depends_on:
+      - rasa
+    ports:
+      - "8501:8501"

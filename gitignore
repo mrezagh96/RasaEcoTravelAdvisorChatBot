@@ -1,0 +1,80 @@
+# =========================
+# Rasa
+# =========================
+
+# The trained model is NOT in the repository: everyone who clones it runs
+# `rasa train` first (see README.md, "Quick start - local development").
+models/
+.rasa/
+*.tar.gz
+
+# NOTE: results/ is deliberately NOT ignored. It holds the files behind the
+# numbers in README.md's "Testing" section and in the report (rasa test
+# output, pytest output, manual checks). See results/README.md.
+
+
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+
+# =========================
+# Virtual Environment
+# =========================
+
+.venv/
+venv/
+env/
+ENV/
+
+
+# =========================
+# Environment / Secrets
+# =========================
+
+# No API key is needed to run this project, so there are no secrets in the
+# repository. Still, a local .env must never be committed; only the
+# example file is kept.
+.env
+.env.*
+!.env.example
+
+.streamlit/secrets.toml
+
+
+# =========================
+# Jupyter
+# =========================
+
+.ipynb_checkpoints/
+
+
+# =========================
+# IDE / Editor
+# =========================
+
+.vscode/
+.idea/
+
+
+# =========================
+# Operating System
+# =========================
+
+.DS_Store
+Thumbs.db
+
+
+# =========================
+# Logs
+# =========================
+
+*.log
+
+.vs/

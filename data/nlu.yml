@@ -1,0 +1,615 @@
+version: "3.1"
+
+nlu:
+
+# NOTE: `nlu_fallback` is deliberately NOT given training examples here —
+# it is a reserved intent name that Rasa's FallbackClassifier assigns
+# automatically whenever DIET's confidence is too low or too ambiguous
+# (see config.yml). Writing examples for it would be meaningless.
+
+- intent: greet
+  examples: |
+    - hi
+    - hello
+    - hey there
+    - good morning
+    - good afternoon
+    - hiya
+    - hey Eco Advisor
+    - hello, are you there?
+    - yo
+    - hi there, can you help me?
+    - good evening
+    - hey, how are you doing
+    - hiya, I need some help
+    - greetings
+
+- intent: goodbye
+  examples: |
+    - bye
+    - goodbye
+    - see you later
+    - that's all for now
+    - I'm done, thanks
+    - talk to you later
+    - catch you later
+    - I'm leaving now, bye
+    - I have to head out now
+    - I should get going now, take care
+    - right then, I'm off now
+    - okay I'm signing off now
+
+- intent: affirm
+  examples: |
+    - yes
+    - yep
+    - sure
+    - that's right
+    - correct
+    - sounds good
+    - go ahead
+    - yes please
+    - yeah definitely
+    - of course
+    - sounds perfect
+    - okay let's do that
+    - yeah sure, go for it
+    - perfect, go ahead
+
+- intent: affirm_city_suggestion
+  examples: |
+    - yes that's the city I meant
+    - that's correct, use that spelling
+    - yes correct, that's the one
+    - that's right, go with that
+
+- intent: clear_conversation
+  examples: |
+    - clear conversation
+    - clear the conversation
+    - start over
+    - reset the chat
+    - let's start fresh
+    - please wipe this conversation clean
+    - erase this chat and begin again
+    - let's restart from the very beginning
+    - clear everything and start a new chat
+
+- intent: deny
+  examples: |
+    - no
+    - nope
+    - not really
+    - that's not right
+    - no thanks
+    - cancel that
+    - nope that's not it
+    - absolutely not
+    - no that's incorrect
+    - please don't do that
+    - that's not what I meant
+    - no way
+
+- intent: thank_you
+  examples: |
+    - thanks
+    - thank you
+    - thanks a lot
+    - appreciate it
+    - cheers, that helps
+    - really appreciate your help
+    - thanks so much for that
+    - that was great, thank you
+    - you've been very helpful
+
+- intent: bot_challenge
+  examples: |
+    - are you a real person?
+    - am I talking to a human?
+    - are you a bot?
+    - is this an AI?
+    - who am I talking to?
+    - who are you?
+    - what do you do?
+    - what can you help me with?
+    - what are you?
+    - what can you do?
+    - tell me about yourself
+    - what is this bot for?
+    - how do you work?
+    - are you a chatbot?
+    - am I speaking with a machine?
+    - what exactly can you assist with?
+    - give me a quick rundown of what you do
+    - so what's your function here
+
+- intent: ask_trip_planning
+  examples: |
+    - I want to go from [Berlin](origin_city) to [Lisbon](destination_city)
+    - I'd like to travel from [London](origin_city) to [Rome](destination_city)
+    - plan a trip from [Paris](origin_city) to [Copenhagen](destination_city)
+    - I'm flying from [Hamburg](origin_city) to [Barcelona](destination_city)
+    - can you help me get from [Munich](origin_city) to [Vienna](destination_city)?
+    - trip from [Madrid](origin_city) to [Amsterdam](destination_city)
+    - I need to travel from [New York](origin_city) to [Lisbon](destination_city)
+    - going from [Frankfurt](origin_city) to [Athens](destination_city)
+    - I want to visit [Prague](destination_city), leaving from [Berlin](origin_city)
+    - help me plan a sustainable trip to [Rome](destination_city) from [Milan](origin_city)
+    - from [Berlin](origin_city) to [Porto](destination_city) please
+    - book me a trip from [Stockholm](origin_city) to [Oslo](destination_city)
+    - I want to travel to [Lisbon](destination_city)
+    - can I go to [Vienna](destination_city)?
+    - planning a city break in [Copenhagen](destination_city)
+    - I'll be leaving from [Dublin](origin_city)
+    - departing from [Zurich](origin_city)
+    - [Berlin](origin_city) to [Lisbon](destination_city)
+    - [London](origin_city) - [Barcelona](destination_city)
+    - I want an eco-friendly trip from [Hannover](origin_city) to [Lisbon](destination_city)
+    - I want to make a travel to [Tabriz](destination_city)
+    - I want to go to [Tehran](destination_city)
+    - planning a trip from [Istanbul](origin_city) to [Dubai](destination_city)
+    - I need to travel from [Tokyo](origin_city) to [Delhi](destination_city)
+    - going from [Cairo](origin_city) to [Toronto](destination_city)
+    - I want to visit [Sydney](destination_city)
+    - book me a trip from [Beijing](origin_city) to [Nairobi](destination_city)
+    - trip from [Sao Paulo](origin_city) to [Mexico City](destination_city)
+    - I'll be leaving from [Seoul](origin_city)
+    - can I go to [Shanghai](destination_city)?
+    - from [Bangkok](origin_city) to [Jakarta](destination_city) please
+    - I want to go to [Berlin](destination_city) from [Dubai](origin_city)
+    - traveling to [Rome](destination_city) from [Athens](origin_city)
+    - I'd like to go to [Vienna](destination_city) from [Prague](origin_city)
+    - go to [Madrid](destination_city) from [Lisbon](origin_city)
+    - I want to visit [Tokyo](destination_city), starting from [Seoul](origin_city)
+    - flying to [Cairo](destination_city), departing from [Dubai](origin_city)
+    - I want to plan a trip
+    - help me book a trip
+    - I need eco travel guidance
+    - i wanna go to dubai
+    - i want to go to tehran
+    - yeah i wanna travel to rome from berlin
+    - i'm heading to paris
+    - actually, let's plan a trip instead
+    - never mind that, I want to plan a trip
+    - forget this, let's plan a trip to Vienna
+    - switch to trip planning
+    - can we do trip planning instead
+    - actually I'd rather plan a trip right now
+    - let's switch to planning a trip instead
+    - I want to go to [NY](destination_city) from [Berlin](origin_city) from this weekend to next weekend
+    - I'd like to travel from [Porto](origin_city) to [Lisbon](destination_city) from tomorrow to next week
+    - plan a trip from [Munich](origin_city) to [Vienna](destination_city) from next Monday to next Friday
+    - book a trip to [Rome](destination_city) from [Milan](origin_city), leaving this weekend and coming back next weekend
+    - I'd like to travel from [Madrid](origin_city) to [Barcelona](destination_city) from 2026/12/10 to 2026/12/16
+    - trip to [Prague](destination_city) from [Vienna](origin_city), this weekend to next weekend
+    - I want to visit [Athens](destination_city) from this weekend to next weekend
+    - can you help me get from [Hamburg](origin_city) to [Zurich](destination_city) from next Monday to next Sunday?
+    - I need to travel from [Berlin](origin_city) to [Amsterdam](destination_city) this weekend to next weekend
+    - going from [Cairo](origin_city) to [Toronto](destination_city) from next week to two weeks from now
+    - could you organise a trip for me
+    - I'd love to go somewhere new
+    - let's get a trip sorted
+    - can we start planning a getaway
+    - I'm keen to book a trip
+    - let's kick off trip planning
+    - sort me out a trip please
+    - can we get a journey arranged
+    - help me arrange a getaway
+    - I'd like some help planning travel
+    - I want to go on a trip from [Madrid](origin_city) to [Vienna](destination_city) from this weekend to the next weekend
+    - I wan to go to a trip from [Lisbon](origin_city) to [Athens](destination_city)
+    - I wanna go on a trip from [Munich](origin_city) to [Prague](destination_city) from tomorrow to next week
+    - I want to take a trip from [London](origin_city) to [Rome](destination_city) this weekend to the next weekend
+    - I would like to go on a trip from [Oslo](origin_city) to [Dublin](destination_city) from next Monday to the next Sunday
+    - i wan to go to a trip from [Cairo](origin_city) to [Dubai](destination_city) from this weekend to next weekend
+
+- intent: change_destination_city
+  examples: |
+    - actually, take me to [Rome](destination_city) instead
+    - can we change the destination to [Vienna](destination_city)?
+    - no wait, let's make it [Barcelona](destination_city) instead
+    - change my destination to [Prague](destination_city)
+    - actually I'd rather go to [Lisbon](destination_city)
+    - let's switch the destination to [Tokyo](destination_city)
+    - can you change it to [Dubai](destination_city)?
+    - instead of that, [Athens](destination_city)
+    - forget that, take me to [Vienna](destination_city)
+    - actually scratch that, let's do [Copenhagen](destination_city)
+    - hold on, change destination to [Munich](destination_city)
+    - wait, can we go to [Amsterdam](destination_city) instead?
+    - I changed my mind, let's go to [Seoul](destination_city)
+    - actually let's do [Milan](destination_city) instead
+    - can we make it [Zurich](destination_city) instead?
+    - switch destination to [Warsaw](destination_city)
+    - actually I want [Budapest](destination_city) instead
+    - no, I'd rather travel to [Istanbul](destination_city)
+    - let's change it to [Toronto](destination_city)
+    - actually take me to [Sydney](destination_city) instead of that
+    - I want a different destination, [Cairo](destination_city)
+    - please change the destination city to [Oslo](destination_city)
+    - actually make the trip to [Stockholm](destination_city)
+    - wait actually [Dublin](destination_city) sounds better
+    - can you update the destination to [Frankfurt](destination_city)?
+    - I'd rather go somewhere else, [Nairobi](destination_city)
+    - on second thought, let's go to [Beijing](destination_city)
+    - actually I changed my mind about the destination, [Mumbai](destination_city)
+    - sorry, actually [Madrid](destination_city) instead please
+    - can we switch it up and go to [Singapore](destination_city) instead
+    - actually you know what, [Doha](destination_city) sounds better
+    - one sec, I'd rather visit [Helsinki](destination_city) instead
+    - instead of Rome, let's go to [Vienna](destination_city)
+    - instead of that city, let's do [Prague](destination_city)
+    - instead of Cairo city, let's go to [Nairobi](destination_city)
+    - instead of Milan city, I'd rather visit [Venice](destination_city)
+    - instead of Berlin city, take me to [Lyon](destination_city)
+    - change my mind, let's go to [Athens](destination_city) instead
+    - change my mind, let's do [Dublin](destination_city) now
+    - I changed my mind, take me to [Warsaw](destination_city) instead
+    - can you modify my location to [Budapest](destination_city)?
+    - modify my location, I want [Zurich](destination_city) instead
+    - please modify my destination to [Toronto](destination_city)
+    - modify my location to [Krakow](destination_city) please
+    - change it to [Singapore](destination_city)
+    - just change it to [Doha](destination_city)
+    - can you change it to [Helsinki](destination_city) please
+    - change it to [Marrakesh](destination_city) instead
+    - no, scratch that, how about [Kyoto](destination_city) instead
+    - let's not go to that city, take me to [Marrakesh](destination_city)
+    - different destination please, [Reykjavik](destination_city)
+    - I'd rather switch to [Lima](destination_city)
+    - reroute me to [Bogota](destination_city)
+    - let's pivot to [Manila](destination_city)
+    - change of plans, take me to [Nice](destination_city)
+    - on reflection, let's go to [Auckland](destination_city) instead
+    - different city please, [Riga](destination_city)
+    - actually let's redirect to [Valencia](destination_city)
+    - can you change the trip to [Vienna](destination_city) instead?
+    - change the trip to [Prague](destination_city) instead
+    - I'm gonna go [Rome](destination_city) as a new destination
+    - I'm gonna go with [Lisbon](destination_city) as the new destination
+    - I've changed my mind, do it for [Athens](destination_city)
+    - I've changed my mind, do it for [Munich](destination_city) instead
+    - I want to take [Dubai](destination_city) for the new destination
+    - let's take [Barcelona](destination_city) as the new destination
+    - I want [Seville](destination_city) as my new destination instead
+    - I want to change the destination again
+    - I would like to change the final location again
+    - can I change the destination again?
+    - I want to change the final destination
+    - let's change the final location please
+    - actually can we pick a different city instead
+    - I'd rather switch destinations to [Valencia](destination_city)
+    - let's revise the destination to [Krakow](destination_city)
+
+- intent: inform_dates
+  examples: |
+    - the 14th of November
+    - 2026-11-14
+    - sometime in mid November
+    - next weekend
+    - from November 10th to November 17th
+    - the first week of December
+    - 10 December to 20 December
+    - I'm flexible on dates
+    - around Christmas
+    - early spring next year
+    - tomorrow
+    - next Sunday
+    - this weekend
+    - next week
+
+- intent: inform_num_travelers
+  examples: |
+    - just me
+    - only me
+    - it's only me
+    - just myself
+    - by myself
+    - me
+    - it's just for one person
+    - [1](num_travelers)
+    - [2](num_travelers) of us
+    - there will be [3](num_travelers) of us
+    - [4](num_travelers) people
+    - a group of [5](num_travelers)
+    - solo trip
+    - travelling solo
+    - me and my partner, so [2](num_travelers)
+    - [2](num_travelers)
+    - we're a party of two
+    - traveling as a group of [9](num_travelers)
+
+- intent: inform_budget_amount
+  examples: |
+    - [500](budget_amount) euros
+    - around [800](budget_amount) EUR
+    - my budget is [1200](budget_amount)
+    - I can spend [300](budget_amount) pounds
+    - about [2000](budget_amount) dollars
+    - [650](budget_amount)
+    - roughly [1000](budget_amount) euros total
+    - I don't want to spend more than [400](budget_amount)
+    - [900](budget_amount) USD
+    - 500 to 800
+    - between 400 and 700 euros
+    - my travel budget is [700](budget_amount) euros
+    - I'd like to keep the total spend under [1100](budget_amount)
+    - total budget of [850](budget_amount) dollars for the trip
+
+- intent: inform_sustainability_level
+  examples: |
+    - [I care a lot about the environment](sustainability_level:high)
+    - [sustainability is my top priority](sustainability_level:high)
+    - [as green as possible](sustainability_level:high)
+    - [I want the lowest carbon option](sustainability_level:high)
+    - [a mix of both is fine](sustainability_level:medium)
+    - [somewhere in the middle](sustainability_level:medium)
+    - [balance cost and carbon](sustainability_level:medium)
+    - [price matters more to me](sustainability_level:low)
+    - [I mostly care about the cheapest option](sustainability_level:low)
+    - [budget is my main concern](sustainability_level:low)
+    - [I'm someone who really values eco-friendly choices](sustainability_level:high)
+    - [I don't mind paying extra to protect the environment](sustainability_level:high)
+    - [honestly saving money matters most to me overall](sustainability_level:low)
+    - [I'd say I'm fairly eco-conscious but not extreme about it](sustainability_level:medium)
+
+- intent: inform_priority_focus
+  examples: |
+    - [lowest carbon whatever it costs](priority_focus:carbon)
+    - [go with the greenest option](priority_focus:carbon)
+    - [minimise emissions first](priority_focus:carbon)
+    - [keep it as cheap as possible](priority_focus:cost)
+    - [lowest cost please](priority_focus:cost)
+    - [price first](priority_focus:cost)
+    - [a balance of both](priority_focus:balanced)
+    - [somewhere in between](priority_focus:balanced)
+    - [if I have to pick one, go with the greenest](priority_focus:carbon)
+    - [between cost and carbon, prioritise carbon](priority_focus:carbon)
+    - [between cost and carbon, prioritise price](priority_focus:cost)
+    - [put price ahead of emissions](priority_focus:cost)
+    - [split the difference between cost and emissions](priority_focus:balanced)
+
+- intent: ask_weather
+  examples: |
+    - what's the weather like in [Lisbon](city_name)?
+    - weather in [Berlin](city_name)
+    - is it raining in [London](city_name)?
+    - what's the forecast for [Rome](city_name)
+    - how's the weather in [Copenhagen](city_name) this week
+    - will it be cold in [Oslo](city_name)?
+    - what should I pack for [Barcelona](city_name)?
+    - temperature in [Vienna](city_name)
+    - is it sunny in [Athens](city_name) right now
+    - I want to check the weather
+    - check weather conditions
+    - can you check the weather for me?
+    - actually, let's check the weather instead
+    - never mind that, what's the weather like in Rome?
+    - switch to weather check
+    - forget that, check the weather for Paris
+    - can we check the weather instead
+    - actually I'd rather check the weather right now
+    - let's switch to checking the weather instead
+
+- intent: ask_trip_to_this_city
+  examples: |
+    - can you plan a trip there?
+    - I want to go there
+    - let's plan a trip to that city
+    - arrange a trip there for me
+    - can you set up a trip to this place?
+    - I'd like to travel there
+    - take me there
+    - book a trip to that city for me
+    - I want to visit this city
+    - plan my trip to there instead
+    - actually, let's go there
+    - sounds nice, can we go there?
+    - I want to visit that place
+    - that sounds great, let's go there
+    - can you help me get to this city?
+    - I'd love to travel to that city
+    - how about we plan a trip to this location
+    - let's organize a trip over there
+    - can you arrange a trip to this location?
+    - ok let's make a trip there happen
+    - can we do a trip to this city instead
+    - actually can you plan my vacation there
+    - I want to book a trip to that place
+    - let's turn this into an actual trip there
+    - I want to go there from [Berlin](origin_city)
+    - can you plan a trip there from [Madrid](origin_city)?
+    - I'd like to travel from [Paris](origin_city) to there
+    - let's go there, I'll be leaving from [Rome](origin_city)
+    - from [London](origin_city), can we go there?
+    - I want a trip to this city starting from [Vienna](origin_city)
+    - yes let's go, departing from [Tokyo](origin_city)
+    - can we plan the trip there, leaving [Cairo](origin_city)
+    - I want to go from [Berlin](origin_city) to there
+    - book it, I'll travel there from [Dubai](origin_city)
+    - I want to go there from [Berlin](origin_city) from this weekend to next weekend
+    - let's go there, I'll be leaving from [Rome](origin_city) from tomorrow to next week
+    - can you plan a trip there from [Madrid](origin_city), this weekend to next weekend
+    - reserve a flight to there
+    - can you reserve a flight to there?
+    - reserve a trip to there
+    - book a trip for it
+    - book a flight for it
+    - arrange a flight for it
+    - make a travel to it
+    - make a trip to it
+    - I'm gonna go there
+    - I'm gonna go to this location
+    - I'm gonna head there
+    - gonna go there
+    - I would like to go there
+    - I would like to travel to this location
+    - I'm gonna book a trip there
+    - set up a flight to there
+
+- intent: ask_currency_exchange
+  examples: |
+    - what's the exchange rate from [USD](from_currency) to [EUR](to_currency)?
+    - convert [GBP](from_currency) to [JPY](to_currency)
+    - how much is [100](amount) [USD](from_currency) in [EUR](to_currency)
+    - exchange rate [EUR](from_currency) to [GBP](to_currency)
+    - what is [50](amount) [GBP](from_currency) in [USD](to_currency)
+    - currency conversion from [CHF](from_currency) to [EUR](to_currency)
+    - how many euros is [200](amount) dollars
+    - I want to convert currency
+    - check currency exchange rates
+    - I need a currency exchange
+    - actually, let's do a currency exchange instead
+    - never mind, I want to convert currency instead
+    - switch to currency exchange
+    - forget that, check the exchange rate instead
+    - can we do currency exchange instead
+    - actually I'd rather convert currency right now
+    - let's switch to a currency exchange instead
+
+- intent: ask_carbon_footprint
+  examples: |
+    - how much CO2 does a flight produce?
+    - what's the carbon footprint of the train option?
+    - how much carbon will this trip generate?
+    - compare emissions between flying and taking the train
+    - which is greener, flying or the train?
+    - what's my carbon footprint for this trip?
+
+- intent: ask_carbon_offset_info
+  examples: |
+    - what is carbon offsetting?
+    - can I offset my flight emissions?
+    - tell me about carbon offset programs
+    - how do carbon offsets work?
+    - where can I buy carbon credits for my trip?
+
+- intent: see_more_options
+  examples: |
+    - show me more options
+    - what else do you have?
+    - any other hotels?
+    - give me more choices
+    - see more results
+    - what other flights are there?
+    - is there anything more you can show me
+    - do you have other choices
+    - what other picks do you have
+    - any more results to see
+
+- intent: confirm_booking
+  examples: |
+    - book this one
+    - I'll take the first option
+    - confirm this trip
+    - let's book it
+    - go ahead and book that hotel
+    - yes, book the flight
+    - reserve this option
+    - yes book it
+
+- intent: deny_booking
+  examples: |
+    - no, don't book it
+    - not this time
+    - no thanks, I'll skip booking
+    - don't book this
+    - maybe later, not now
+    - no don't reserve that
+    - I'd rather not book right now
+    - let's not book that right now
+    - I don't want to book this one
+
+- intent: request_human_handover
+  examples: |
+    - I want to speak to a real person
+    - can I talk to a human advisor?
+    - connect me with an agent
+    - this isn't working, get me a human
+    - I need a real travel agent
+    - transfer me to support
+    - can a human help me instead?
+    - please get me someone real to talk to
+    - I need to speak with an actual human
+    - connect me to a real person right away
+    - escalate me to a human please
+
+- intent: ask_human_advisor
+  examples: |
+    - I'd like to speak to a specialist
+    - can someone from your team contact me?
+    - I want expert help planning my trip
+    - put me in touch with a travel advisor
+    - I want personalised trip advice
+    - smart trip decision advisor
+    - help me make a better-informed trip decision
+    - I want a human advisor
+    - actually, connect me with a human advisor instead
+    - never mind, I want to talk to a human instead
+    - switch me to a human advisor
+    - forget this, I want expert advice instead
+    - can I talk to an advisor instead
+    - actually I'd rather speak to a human advisor right now
+    - let's switch to a human advisor instead
+    - I'd like some tailored advice from a real expert
+    - can someone qualified review my itinerary
+    - I'd value some expert input on where I'm headed
+
+- intent: see_cities_list
+  examples: |
+    - show me the cities you cover
+    - what cities do you have data for?
+    - list of cities
+    - which destinations do you support?
+    - show me the cities list
+    - actually, show me the cities list instead
+    - never mind, what cities do you support?
+    - switch to the cities list
+    - forget this, show me the cities instead
+    - can I see the cities list instead
+    - actually I'd rather see the cities list right now
+
+- intent: see_hotel_list
+  examples: |
+    - show me a hotel list
+    - list some hotels
+    - what hotels do you have?
+    - hotel list
+    - actually, show me the hotel list instead
+    - never mind that, show me some hotels
+    - switch to the hotel list
+    - forget this, show me hotels instead
+    - can I see hotels instead
+    - actually I'd rather see the hotel list right now
+
+- intent: finish
+  examples: |
+    - finish
+    - I'm done
+    - that's all, finish
+    - wrap up
+    - finish thank you
+    - I believe that wraps everything up
+    - nothing more needed, I'm finished
+    - ready to close this out
+    - that covers it, let's finish here
+
+- intent: out_of_scope
+  examples: |
+    - tell me a joke
+    - what's the meaning of life?
+    - who is the president of France?
+    - can you write my homework for me?
+    - what's 2 plus 2?
+    - sing me a song
+    - what's your favourite movie?
+    - do you have a girlfriend?
+    - tell me about the stock market
+    - what's the capital of Japan?
+    - can you help me with my math homework?
+    - recommend me a video game
+    - what's the best pizza topping
+    - who won the football match last night
+    - can you do my taxes
+    - what's your opinion on politics
+    - tell me a riddle

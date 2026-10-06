@@ -1,0 +1,382 @@
+version: "3.1"
+
+# =============================================================================
+# tests/test_nlu.yml — HELD-OUT NLU test set (assignment Section 5,
+# "Rasa NLU Testing")
+# =============================================================================
+# Every example below is a FRESH paraphrase written specifically for this
+# file — different wording, different cities/currencies/numbers than any
+# example in data/nlu.yml — never copy-pasted from the training data.
+# tests/test_nlu_no_overlap.py enforces this mechanically on every test run:
+# it fails the build if a single example here is an exact (normalised)
+# duplicate of anything in data/nlu.yml, so this file cannot silently drift
+# back into overlapping with training data later.
+#
+# Run against the trained model with:
+#   .venv/bin/rasa test nlu -u tests/test_nlu.yml -m models/eco-travel-advisor.tar.gz --out results/nlu_held_out
+#
+# This is deliberately SEPARATE from the assignment's other prescribed
+# method, `rasa test nlu --cross-validation --folds 5` (run directly on
+# data/nlu.yml — see README "Testing" section) — cross-validation measures
+# how well the model generalises WITHIN the training distribution by
+# construction (it never trains and tests on the same fold), while this
+# file measures generalisation to genuinely unseen phrasing/cities chosen
+# by a human, which is the complementary, stronger check.
+# =============================================================================
+
+nlu:
+
+- intent: greet
+  examples: |
+    - good day
+    - hiya there
+    - morning!
+    - can you help me out?
+    - hello, is anyone there?
+    - hey, how's it going
+
+- intent: goodbye
+  examples: |
+    - gotta go, bye for now
+    - that's everything, cheers
+    - I'll head off now
+    - thanks, that's all I needed
+    - speak soon
+
+- intent: affirm
+  examples: |
+    - yup
+    - definitely
+    - that works for me
+    - absolutely
+    - fine by me
+    - alright, let's do it
+
+- intent: affirm_city_suggestion
+  examples: |
+    - yep that's the spelling I meant
+    - correct, use that one
+    - that's exactly the city I meant
+    - yes, go with that spelling
+
+- intent: clear_conversation
+  examples: |
+    - please reset everything
+    - wipe the chat and start again
+    - can we start from scratch
+    - restart this conversation
+
+- intent: deny
+  examples: |
+    - nah
+    - not quite
+    - that's wrong
+    - no, don't do that
+    - negative
+
+- intent: thank_you
+  examples: |
+    - much appreciated
+    - thanks so much
+    - that was really helpful, thanks
+    - cheers for that
+
+- intent: bot_challenge
+  examples: |
+    - are you human or a machine?
+    - am I chatting with software?
+    - what exactly are you?
+    - are you an assistant or a person?
+    - what's your purpose here?
+    - what kind of help can you offer?
+    - describe what you do
+
+- intent: ask_trip_planning
+  examples: |
+    - I'd like to travel from [Edinburgh](origin_city) to [Brussels](destination_city)
+    - can you arrange a trip from [Geneva](origin_city) to [Florence](destination_city)?
+    - I'm heading from [Naples](origin_city) to [Hanoi](destination_city)
+    - set up a journey from [Kuala Lumpur](origin_city) to [Cape Town](destination_city)
+    - I'd love to visit [Montreal](destination_city)
+    - any chance you can get me to [Vancouver](destination_city)?
+    - starting my trip from [Melbourne](origin_city)
+    - [Wellington](origin_city) over to [Accra](destination_city)
+    - I need an eco-conscious journey to [Casablanca](destination_city) leaving from [Tunis](origin_city)
+    - let's organise a getaway to [Amman](destination_city)
+    - I'm thinking about visiting [Beirut](destination_city)
+    - could you plan something for me
+    - i would love to travel somewhere green
+    - i wanna head to tbilisi
+    - yeah let's plan a getaway to florence from naples
+    - forget everything else, let's just plan a trip
+    - scrap that, I'd rather plan a journey
+    - can we switch over to planning a trip
+    - I want to go to [Hanoi](destination_city) from [Accra](origin_city) from this weekend to next weekend
+    - plan something from [Tbilisi](origin_city) to [Yerevan](destination_city) from next Tuesday to next Friday
+    - getaway to [Baku](destination_city) from [Almaty](origin_city), this weekend to next weekend
+
+- intent: change_destination_city
+  examples: |
+    - on second thought send me to [Florence](destination_city) instead
+    - scratch that, [Hanoi](destination_city) sounds better
+    - let's swap the destination for [Cape Town](destination_city)
+    - I'd rather end up in [Vancouver](destination_city)
+    - actually could we aim for [Melbourne](destination_city) instead
+    - change of heart, let's go with [Accra](destination_city)
+    - please update the destination to [Casablanca](destination_city)
+    - I'll go with [Tunis](destination_city) instead of that
+    - rather than that city, [Amman](destination_city) please
+    - swap it for [Beirut](destination_city)
+    - I'd like to redirect everything to [Tbilisi](destination_city)
+    - can you reroute this to [Yerevan](destination_city)
+    - new plan, [Baku](destination_city) instead
+    - different spot please, [Almaty](destination_city)
+    - I want to switch the final destination once more
+    - could we revise the destination again?
+    - I'd like to update the final destination please
+    - let's rethink the destination one more time
+
+- intent: inform_dates
+  examples: |
+    - the 3rd of March
+    - 2027-01-05
+    - somewhere around late January
+    - the weekend after next
+    - from January 5th to January 12th
+    - the last week of February
+    - 2 March to 9 March
+    - dates are flexible for me
+    - near New Year's
+    - late autumn next year
+    - day after tomorrow
+    - next Thursday
+    - this coming weekend
+    - the week after this one
+
+- intent: inform_num_travelers
+  examples: |
+    - it'll just be me travelling
+    - I'm going alone
+    - only myself, nobody else
+    - [6](num_travelers) of us total
+    - a group of [8](num_travelers)
+    - [7](num_travelers) travellers
+    - we are [3](num_travelers) people
+    - travelling with my partner, so two of us
+    - a solo traveller here
+
+- intent: inform_budget_amount
+  examples: |
+    - [350](budget_amount) euros total
+    - roughly [1100](budget_amount) EUR
+    - I'd rather not exceed [275](budget_amount)
+    - something like [1500](budget_amount) dollars
+    - [600](budget_amount)
+    - my limit is [950](budget_amount) pounds
+    - between 450 and 750
+    - [1800](budget_amount) USD max
+
+- intent: inform_sustainability_level
+  examples: |
+    - [the environment matters most to me](sustainability_level:high)
+    - [I'd like the greenest choice available](sustainability_level:high)
+    - [cutting carbon is my number one concern](sustainability_level:high)
+    - [a bit of both works for me](sustainability_level:medium)
+    - [somewhere balanced is fine](sustainability_level:medium)
+    - [I lean more towards saving money](sustainability_level:low)
+    - [keeping costs down matters most](sustainability_level:low)
+
+- intent: inform_priority_focus
+  examples: |
+    - [the greenest route no matter the price](priority_focus:carbon)
+    - [cut emissions above everything else](priority_focus:carbon)
+    - [whatever costs the least](priority_focus:cost)
+    - [the cheapest option available](priority_focus:cost)
+    - [something in between the two](priority_focus:balanced)
+    - [an even mix of cost and carbon](priority_focus:balanced)
+
+- intent: ask_weather
+  examples: |
+    - how's the climate in [Florence](city_name) these days?
+    - is it chilly in [Hanoi](city_name)?
+    - forecast for [Cape Town](city_name) please
+    - what should I wear in [Montreal](city_name)?
+    - any rain expected in [Vancouver](city_name)?
+    - degrees in [Melbourne](city_name) right now
+    - is [Accra](city_name) hot this time of year?
+    - I'd like a weather update
+    - could you check conditions outside for me?
+    - let's look at the weather instead
+    - scrap that, how's the weather in casablanca
+    - switch over to a weather check
+    - forget the rest, check tunis weather for me
+    - can we look at the weather instead please
+
+- intent: ask_trip_to_this_city
+  examples: |
+    - could we book something there instead
+    - I'd fancy going there
+    - let's arrange a trip to that spot
+    - set up a journey over there for me
+    - can you organise something to this place?
+    - I'd be keen to travel there
+    - get me there please
+    - reserve something to that city for me
+    - I'm interested in visiting this city
+    - plan my next trip there instead
+    - sounds good, let's head there
+    - that place looks nice, can we go?
+    - I'd like to check out that location
+    - great, let's make it happen, over there
+    - could you help me reach this city?
+    - I'd enjoy a trip to that city
+    - what about organising a trip to this spot
+    - let's set one up over there
+    - could you line up a trip to this location?
+    - alright, let's make a trip there a reality
+    - can we arrange a visit to this city instead
+    - actually, could you plan my holiday there
+    - I'd like to book something to that place
+    - let's turn that into a real trip over there
+    - I'd like to go there from [Geneva](origin_city)
+    - can you plan something there from [Naples](origin_city)?
+    - I'd like to travel from [Florence](origin_city) to there
+    - let's head there, I'll be departing from [Hanoi](origin_city)
+    - from [Cape Town](origin_city), shall we go there?
+    - I want a trip to this city starting from [Montreal](origin_city)
+    - sure let's go, leaving from [Wellington](origin_city)
+    - can we arrange the trip there, departing [Accra](origin_city)
+    - I want to head from [Casablanca](origin_city) to there
+    - book it, I'll be travelling there from [Tunis](origin_city)
+    - I'd like to go there from [Beirut](origin_city) from this weekend to next weekend
+    - let's head there, leaving from [Tbilisi](origin_city) from tomorrow to next week
+    - can you arrange a trip there from [Yerevan](origin_city), this weekend to next weekend
+    - secure a flight over there
+    - would you reserve a flight to there?
+    - line up a trip to there
+    - set up a trip for it
+    - sort out a flight for it
+    - organise a flight for it
+    - put together a travel plan to it
+    - build a trip to it
+    - I'm planning on heading there
+    - I'm planning to go to this spot
+    - I'm about to head there
+    - about to go there
+    - I'd fancy travelling to this location
+    - I'd be happy to travel to this spot
+    - I'm about to set up a trip there
+
+- intent: ask_currency_exchange
+  examples: |
+    - what's [AUD](from_currency) worth in [CAD](to_currency)?
+    - turn [SEK](from_currency) into [NOK](to_currency) for me
+    - how much is [75](amount) [AUD](from_currency) in [INR](to_currency)
+    - rate from [NOK](from_currency) to [SEK](to_currency)
+    - what is [150](amount) [CAD](from_currency) worth in [AUD](to_currency)
+    - exchange [INR](from_currency) for [AUD](to_currency)
+    - how many pounds is [300](amount) euros
+    - I'd like to swap some currency
+    - let's look at exchange rates
+    - I need to convert some money
+    - let's do a currency swap instead
+    - never mind, switch to currency exchange please
+    - scrap that, let's check an exchange rate
+    - forget it, convert some currency for me
+    - can we do a currency check instead
+
+- intent: ask_carbon_footprint
+  examples: |
+    - what's the CO2 impact of flying this route?
+    - how green is the train option compared to flying?
+    - what footprint would this trip leave?
+    - how much carbon does this journey produce?
+    - which produces less emissions, train or plane?
+
+- intent: ask_carbon_offset_info
+  examples: |
+    - what does offsetting carbon actually mean?
+    - is it possible to offset my travel emissions?
+    - explain how carbon offset schemes work
+    - where could I purchase offset credits?
+
+- intent: see_more_options
+  examples: |
+    - got anything else to show me?
+    - are there more choices available?
+    - show me some alternatives
+    - what other options are out there?
+
+- intent: confirm_booking
+  examples: |
+    - go ahead and reserve that one
+    - lock in this option
+    - yes, let's finalise the booking
+    - that one works, book it
+    - please confirm that reservation
+
+- intent: deny_booking
+  examples: |
+    - hold off on booking that
+    - not ready to book yet
+    - skip the booking for now
+    - I'll pass on booking this one
+
+- intent: request_human_handover
+  examples: |
+    - put me through to someone real
+    - I'd rather talk to an actual person
+    - can a real agent take over from here?
+    - this bot isn't cutting it, I need a human
+    - hand me off to a real advisor please
+
+- intent: ask_human_advisor
+  examples: |
+    - I'd like personalised guidance from your team
+    - could an expert look at my trip plans?
+    - I want tailored travel recommendations
+    - connect me to someone who can advise me directly
+    - I need a professional's opinion on this trip
+    - let's get a human advisor involved instead
+    - never mind, I'd rather speak with a specialist
+    - switch this over to a human advisor please
+
+- intent: see_cities_list
+  examples: |
+    - which cities are supported?
+    - can I get the full list of cities?
+    - what destinations are covered here?
+    - show me every city you know about
+    - scrap that, let's see the cities list instead
+    - switch over to the cities list please
+
+- intent: see_hotel_list
+  examples: |
+    - can I browse some hotels?
+    - give me a rundown of hotels
+    - what accommodation options are there?
+    - show me the hotels available
+    - never mind, let's look at hotels instead
+    - switch to viewing hotels please
+
+- intent: finish
+  examples: |
+    - all done here
+    - that'll be everything
+    - let's wrap this up
+    - I'm finished, thanks
+
+- intent: out_of_scope
+  examples: |
+    - make me laugh with a joke
+    - what's the purpose of existence?
+    - who runs the government in Germany?
+    - do my essay for me please
+    - what's 7 times 8?
+    - can you write me a poem?
+    - what movies do you like?
+    - are you single?
+    - give me stock market tips
+    - what's the capital of Brazil?
+    - solve this equation for me
+    - suggest a good video game

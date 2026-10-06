@@ -1,0 +1,291 @@
+{
+  "berlin": [
+    {
+      "name": "Brandenburg Gate",
+      "kind": "monument",
+      "summary": "An 18th-century neoclassical gate and one of Berlin's most recognisable landmarks."
+    },
+    {
+      "name": "Museum Island",
+      "kind": "museum",
+      "summary": "A UNESCO World Heritage complex of five major museums on the Spree river."
+    },
+    {
+      "name": "East Side Gallery",
+      "kind": "monument",
+      "summary": "A surviving stretch of the Berlin Wall covered in murals by international artists."
+    }
+  ],
+  "paris": [
+    {
+      "name": "Eiffel Tower",
+      "kind": "monument",
+      "summary": "An iron lattice tower completed in 1889, the city's most famous landmark."
+    },
+    {
+      "name": "Louvre Museum",
+      "kind": "museum",
+      "summary": "The world's largest art museum, home to the Mona Lisa."
+    },
+    {
+      "name": "Notre-Dame Cathedral",
+      "kind": "monument",
+      "summary": "A medieval Gothic cathedral on the Île de la Cité, still under post-fire restoration."
+    }
+  ],
+  "rome": [
+    {
+      "name": "Colosseum",
+      "kind": "ruins",
+      "summary": "The largest ancient amphitheatre ever built, completed around 80 AD."
+    },
+    {
+      "name": "Roman Forum",
+      "kind": "archaeological_site",
+      "summary": "The political and civic heart of ancient Rome, now a sprawling ruin site."
+    },
+    {
+      "name": "Vatican Museums",
+      "kind": "museum",
+      "summary": "Houses the Sistine Chapel and one of the world's greatest art collections."
+    }
+  ],
+  "london": [
+    {
+      "name": "British Museum",
+      "kind": "museum",
+      "summary": "A vast museum of human history and culture, free to enter."
+    },
+    {
+      "name": "Tower of London",
+      "kind": "castle",
+      "summary": "A historic castle on the Thames, home to the Crown Jewels."
+    },
+    {
+      "name": "Buckingham Palace",
+      "kind": "monument",
+      "summary": "The official London residence of the British monarch."
+    }
+  ],
+  "lisbon": [
+    {
+      "name": "Belem Tower",
+      "kind": "fort",
+      "summary": "A 16th-century fortification and UNESCO site that once guarded Lisbon's harbour."
+    },
+    {
+      "name": "Jeronimos Monastery",
+      "kind": "monument",
+      "summary": "An elaborate Manueline-style monastery near the Tagus river."
+    },
+    {
+      "name": "Alfama district",
+      "kind": "museum",
+      "summary": "Lisbon's oldest neighbourhood, known for narrow streets and fado music."
+    }
+  ],
+  "barcelona": [
+    {
+      "name": "Sagrada Familia",
+      "kind": "monument",
+      "summary": "Antoni Gaudi's still-unfinished basilica, under construction since 1882."
+    },
+    {
+      "name": "Park Guell",
+      "kind": "monument",
+      "summary": "A public park showcasing Gaudi's colourful mosaic architecture."
+    },
+    {
+      "name": "Gothic Quarter",
+      "kind": "museum",
+      "summary": "Barcelona's medieval old town with narrow streets and Roman remains."
+    }
+  ],
+  "amsterdam": [
+    {
+      "name": "Anne Frank House",
+      "kind": "museum",
+      "summary": "The canal house where Anne Frank hid during WWII, now a museum."
+    },
+    {
+      "name": "Rijksmuseum",
+      "kind": "museum",
+      "summary": "The Dutch national museum of art and history, home to Rembrandt's Night Watch."
+    },
+    {
+      "name": "Van Gogh Museum",
+      "kind": "museum",
+      "summary": "The world's largest collection of Van Gogh's paintings and letters."
+    }
+  ],
+  "vienna": [
+    {
+      "name": "Schonbrunn Palace",
+      "kind": "castle",
+      "summary": "The former imperial summer residence of the Habsburgs."
+    },
+    {
+      "name": "St. Stephen's Cathedral",
+      "kind": "monument",
+      "summary": "Vienna's Gothic cathedral and a symbol of the city."
+    },
+    {
+      "name": "Belvedere Palace",
+      "kind": "museum",
+      "summary": "A Baroque palace complex housing Klimt's 'The Kiss'."
+    }
+  ],
+  "prague": [
+    {
+      "name": "Prague Castle",
+      "kind": "castle",
+      "summary": "One of the largest ancient castle complexes in the world."
+    },
+    {
+      "name": "Charles Bridge",
+      "kind": "monument",
+      "summary": "A 14th-century stone bridge lined with baroque statues."
+    },
+    {
+      "name": "Old Town Square",
+      "kind": "monument",
+      "summary": "Prague's historic square with the famous medieval Astronomical Clock."
+    }
+  ],
+  "athens": [
+    {
+      "name": "Acropolis",
+      "kind": "archaeological_site",
+      "summary": "An ancient citadel above Athens containing the Parthenon."
+    },
+    {
+      "name": "Ancient Agora",
+      "kind": "archaeological_site",
+      "summary": "The centre of public life in classical Athens."
+    },
+    {
+      "name": "Plaka district",
+      "kind": "museum",
+      "summary": "Athens' oldest neighbourhood at the foot of the Acropolis."
+    }
+  ],
+  "istanbul": [
+    {
+      "name": "Hagia Sophia",
+      "kind": "monument",
+      "summary": "A former cathedral and mosque, now a mosque again, renowned for its massive dome."
+    },
+    {
+      "name": "Topkapi Palace",
+      "kind": "castle",
+      "summary": "The primary residence of Ottoman sultans for centuries."
+    },
+    {
+      "name": "Grand Bazaar",
+      "kind": "museum",
+      "summary": "One of the largest and oldest covered markets in the world."
+    }
+  ],
+  "tehran": [
+    {
+      "name": "Golestan Palace",
+      "kind": "castle",
+      "summary": "A UNESCO-listed Qajar-era royal complex in central Tehran."
+    },
+    {
+      "name": "Azadi Tower",
+      "kind": "monument",
+      "summary": "A landmark tower built to mark 2,500 years of the Persian Empire."
+    },
+    {
+      "name": "Grand Bazaar of Tehran",
+      "kind": "museum",
+      "summary": "One of the oldest and largest bazaars in the Middle East."
+    }
+  ],
+  "tabriz": [
+    {
+      "name": "Tabriz Historic Bazaar Complex",
+      "kind": "museum",
+      "summary": "A UNESCO World Heritage covered bazaar, one of the oldest in the Middle East."
+    },
+    {
+      "name": "Blue Mosque",
+      "kind": "monument",
+      "summary": "A 15th-century mosque famed for its blue tilework, rebuilt after an earthquake."
+    },
+    {
+      "name": "El Goli Park",
+      "kind": "monument",
+      "summary": "A historic park built around a Qajar-era pool and pavilion."
+    }
+  ],
+  "dubai": [
+    {
+      "name": "Burj Khalifa",
+      "kind": "monument",
+      "summary": "The tallest building in the world, with an observation deck."
+    },
+    {
+      "name": "Dubai Museum",
+      "kind": "museum",
+      "summary": "Housed in the historic Al Fahidi Fort, tracing the city's rapid growth."
+    },
+    {
+      "name": "Dubai Creek",
+      "kind": "museum",
+      "summary": "The historic waterway around which the old city grew, still crossed by traditional abras."
+    }
+  ],
+  "tokyo": [
+    {
+      "name": "Senso-ji Temple",
+      "kind": "monument",
+      "summary": "Tokyo's oldest Buddhist temple, in the Asakusa district."
+    },
+    {
+      "name": "Meiji Shrine",
+      "kind": "monument",
+      "summary": "A Shinto shrine dedicated to Emperor Meiji, set in a forested park."
+    },
+    {
+      "name": "Tokyo National Museum",
+      "kind": "museum",
+      "summary": "Japan's oldest and largest museum, holding a vast art and antiquities collection."
+    }
+  ],
+  "new york": [
+    {
+      "name": "Statue of Liberty",
+      "kind": "monument",
+      "summary": "A colossal neoclassical sculpture on Liberty Island, a gift from France in 1886."
+    },
+    {
+      "name": "Metropolitan Museum of Art",
+      "kind": "museum",
+      "summary": "One of the world's largest and most visited art museums."
+    },
+    {
+      "name": "Central Park",
+      "kind": "monument",
+      "summary": "An 843-acre urban park in the heart of Manhattan."
+    }
+  ],
+  "cairo": [
+    {
+      "name": "Pyramids of Giza",
+      "kind": "archaeological_site",
+      "summary": "The last surviving Wonder of the Ancient World, built as royal tombs."
+    },
+    {
+      "name": "Egyptian Museum",
+      "kind": "museum",
+      "summary": "Home to the world's largest collection of Pharaonic antiquities."
+    },
+    {
+      "name": "Khan el-Khalili",
+      "kind": "museum",
+      "summary": "A centuries-old bazaar in Islamic Cairo."
+    }
+  ]
+}
